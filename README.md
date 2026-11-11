@@ -24,13 +24,7 @@ composer install
 copy .env.example .env
 php artisan key:generate
 
-# Sesuaikan koneksi database di .env
-# DB_CONNECTION=mysql
-# DB_HOST=127.0.0.1
-# DB_PORT=3306
-# DB_DATABASE=db_penerima_manfaat
-# DB_USERNAME=root
-# DB_PASSWORD=
+
 
 php artisan migrate --seed
 ```
