@@ -18,8 +18,7 @@ Aplikasi web untuk mencatat, memantau, dan mengarsipkan data penerima manfaat SP
 
 ## Instalasi
 
-```bash
-cd "F:\laravel-penerima manfaat"
+
 
 composer install
 copy .env.example .env
