@@ -25,11 +25,15 @@ class CreateBeneficiary extends CreateRecord
             $tahun = $data['tahun'] ?? (int) now()->format('Y');
             $keterangan = $data['keterangan'] ?? 'Diinput via rekapitulasi jumlah/agregat.';
 
+            $institution = \App\Models\Institution::query()->find($institutionId);
+            $institutionName = $institution?->nama ?? 'Lembaga';
+            $kelasLabel = $kelas ? ' (Kelas ' . $kelas . ')' : '';
+
             $firstRecord = null;
             for ($i = 1; $i <= $jumlah; $i++) {
                 $payload = [
                     'institution_id' => $institutionId,
-                    'nama' => 'Penerima Rekap Kelas ' . ($kelas ?? 'Umur') . ' #' . $i,
+                    'nama' => 'Penerima Manfaat ' . $institutionName . $kelasLabel . ' #' . $i,
                     'nik' => null,
                     'nisn' => null,
                     'jenis_kelamin' => 'L',

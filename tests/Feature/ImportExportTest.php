@@ -399,7 +399,7 @@ class ImportExportTest extends TestCase
             'institution_id' => $institution->id,
             'kategori' => 'sd',
             'kelas' => 3,
-            'nama' => 'Penerima Rekap Kelas 3 #15',
+            'nama' => 'Penerima Manfaat SDN 1 Samarang (Kelas 3) #15',
         ]);
     }
 
