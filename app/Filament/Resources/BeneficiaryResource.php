@@ -37,16 +37,37 @@ class BeneficiaryResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Data Penerima Manfaat')
                     ->schema([
+                        Forms\Components\Radio::make('input_mode')
+                            ->label('Mode Input Data')
+                            ->options([
+                                'individu' => 'Data Individu Lengkap (Nama, NIK, NISN, dll.)',
+                                'agregat' => 'Input Jumlah / Rekapitulasi Saja (Angka Saja per Kelas, cth: Kelas 3 jumlah 200)',
+                            ])
+                            ->default('individu')
+                            ->live()
+                            ->columnSpanFull()
+                            ->visible(fn (string $operation): bool => $operation === 'create')
+                            ->helperText('Pilih mode input jumlah/agregat jika data lengkap per individu belum tersedia.'),
                         Forms\Components\Select::make('institution_id')
                             ->label('Lembaga')
                             ->relationship('institution', 'nama')
                             ->searchable()
                             ->preload()
                             ->required(),
+                        Forms\Components\TextInput::make('jumlah')
+                            ->label('Jumlah / Kuantitas Total')
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(10000)
+                            ->default(100)
+                            ->required(fn (Get $get): bool => ($get('input_mode') ?? 'individu') === 'agregat')
+                            ->visible(fn (Get $get): bool => ($get('input_mode') ?? 'individu') === 'agregat')
+                            ->helperText('Contoh: Masukkan 200 untuk Kelas 3 atau 100 untuk Kelas 2. Sistem akan membuat entri rekapitulasi secara otomatis.'),
                         Forms\Components\TextInput::make('nama')
                             ->label('Nama Lengkap')
-                            ->required()
-                            ->maxLength(255),
+                            ->required(fn (Get $get): bool => ($get('input_mode') ?? 'individu') === 'individu')
+                            ->maxLength(255)
+                            ->visible(fn (Get $get): bool => ($get('input_mode') ?? 'individu') === 'individu'),
                         Forms\Components\TextInput::make('nik')
                             ->label('NIK')
                             ->nullable()
@@ -57,7 +78,8 @@ class BeneficiaryResource extends Resource
                             ->unique(ignoreRecord: true)
                             ->inputMode('numeric')
                             ->placeholder('Boleh dikosongkan')
-                            ->helperText('Opsional. Jika diisi harus 16 digit angka dan belum terdaftar.'),
+                            ->helperText('Opsional. Jika diisi harus 16 digit angka dan belum terdaftar.')
+                            ->visible(fn (Get $get): bool => ($get('input_mode') ?? 'individu') === 'individu'),
                         Forms\Components\TextInput::make('nisn')
                             ->label('NISN')
                             ->nullable()
@@ -68,12 +90,14 @@ class BeneficiaryResource extends Resource
                             ->unique(ignoreRecord: true)
                             ->inputMode('numeric')
                             ->placeholder('Boleh dikosongkan')
-                            ->helperText('Opsional. Jika diisi harus 10 digit angka dan belum terdaftar.'),
+                            ->helperText('Opsional. Jika diisi harus 10 digit angka dan belum terdaftar.')
+                            ->visible(fn (Get $get): bool => ($get('input_mode') ?? 'individu') === 'individu'),
                         Forms\Components\Select::make('jenis_kelamin')
                             ->label('Jenis Kelamin')
                             ->options(Beneficiary::JENIS_KELAMIN)
-                            ->required()
-                            ->default('L'),
+                            ->required(fn (Get $get): bool => ($get('input_mode') ?? 'individu') === 'individu')
+                            ->default('L')
+                            ->visible(fn (Get $get): bool => ($get('input_mode') ?? 'individu') === 'individu'),
                         Forms\Components\Select::make('kategori')
                             ->label('Kategori')
                             ->options(Category::optionsPenerima())

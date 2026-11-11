@@ -378,6 +378,31 @@ class ImportExportTest extends TestCase
         $this->assertFalse($institution->fresh()->is_active);
     }
 
+    public function test_buat_penerima_dengan_mode_agregat_jumlah_saja(): void
+    {
+        $institution = Institution::query()->where('nama', 'SDN 1 Samarang')->firstOrFail();
+
+        Livewire::actingAs($this->admin)
+            ->test(CreateBeneficiary::class)
+            ->fillForm([
+                'input_mode' => 'agregat',
+                'institution_id' => $institution->id,
+                'jumlah' => 15,
+                'kategori' => 'sd',
+                'kelas' => 3,
+                'status' => 'aktif',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('beneficiaries', [
+            'institution_id' => $institution->id,
+            'kategori' => 'sd',
+            'kelas' => 3,
+            'nama' => 'Penerima Rekap Kelas 3 #15',
+        ]);
+    }
+
     private function importPenerimaCsv(string $filename, string $content): mixed
     {
         $upload = UploadedFile::fake()->createWithContent($filename, $content);
