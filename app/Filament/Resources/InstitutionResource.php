@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\InstitutionResource\Pages;
 use App\Models\Category;
 use App\Models\Institution;
+use App\Models\SppgProfile;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -131,14 +132,56 @@ class InstitutionResource extends Resource
                             ->label('Latitude (Lintang)')
                             ->numeric()
                             ->step('any')
+                            ->live(onBlur: true)
                             ->placeholder('-7.22750000')
-                            ->helperText('Titik koordinat lintang lembaga (GPS).'),
+                            ->helperText(function (Get $get) {
+                                $lat = $get('latitude');
+                                $lng = $get('longitude');
+                                if (!is_numeric($lat) || !is_numeric($lng)) {
+                                    return 'Titik koordinat lintang lembaga (GPS). Masukkan Lat & Lng untuk kalkulasi jarak otomatis ke pusat SPPG.';
+                                }
+                                $sppg = SppgProfile::current();
+                                if (!$sppg->latitude || !$sppg->longitude) {
+                                    return 'Koordinat SPPG pusat belum diatur.';
+                                }
+                                $earthRadius = 6371;
+                                $latFrom = deg2rad((float) $sppg->latitude);
+                                $lonFrom = deg2rad((float) $sppg->longitude);
+                                $latTo = deg2rad((float) $lat);
+                                $lonTo = deg2rad((float) $lng);
+                                $latDelta = $latTo - $latFrom;
+                                $lonDelta = $lonTo - $lonFrom;
+                                $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) + cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+                                $dist = round($earthRadius * $angle, 2);
+                                return "📍 Jarak otomatis ke Pusat SPPG ({$sppg->nama}): {$dist} KM";
+                            }),
                         Forms\Components\TextInput::make('longitude')
                             ->label('Longitude (Bujur)')
                             ->numeric()
                             ->step('any')
+                            ->live(onBlur: true)
                             ->placeholder('107.87200000')
-                            ->helperText('Titik koordinat bujur lembaga (GPS).'),
+                            ->helperText(function (Get $get) {
+                                $lat = $get('latitude');
+                                $lng = $get('longitude');
+                                if (!is_numeric($lat) || !is_numeric($lng)) {
+                                    return 'Titik koordinat bujur lembaga (GPS).';
+                                }
+                                $sppg = SppgProfile::current();
+                                if (!$sppg->latitude || !$sppg->longitude) {
+                                    return '';
+                                }
+                                $earthRadius = 6371;
+                                $latFrom = deg2rad((float) $sppg->latitude);
+                                $lonFrom = deg2rad((float) $sppg->longitude);
+                                $latTo = deg2rad((float) $lat);
+                                $lonTo = deg2rad((float) $lng);
+                                $latDelta = $latTo - $latFrom;
+                                $lonDelta = $lonTo - $lonFrom;
+                                $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) + cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+                                $dist = round($earthRadius * $angle, 2);
+                                return "📍 Jarak otomatis ke Pusat SPPG: {$dist} KM";
+                            }),
                         Forms\Components\Select::make('urutan')
                             ->label('Urutan Tampil')
                             ->options(function (?Institution $record) {
