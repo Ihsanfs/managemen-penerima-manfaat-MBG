@@ -5,7 +5,7 @@
             .gis-wrap { display: grid; gap: 1.25rem; }
             .gis-card { background: #fff; border-radius: .75rem; box-shadow: 0 0 0 1px rgba(17,24,39,.06), 0 1px 2px rgba(17,24,39,.06); overflow: hidden; }
             .dark .gis-card { background: rgb(var(--gray-900)); box-shadow: 0 0 0 1px rgba(255,255,255,.1); }
-            .gis-card-header { padding: .8rem 1rem; border-bottom: 1px solid rgb(var(--gray-200)); display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+            .gis-card-header { padding: .8rem 1rem; border-bottom: 1px solid rgb(var(--gray-200)); display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
             .dark .gis-card-header { border-color: rgba(255,255,255,.1); }
             .gis-card-title { font-size: .875rem; font-weight: 700; color: rgb(var(--gray-950)); }
             .dark .gis-card-title { color: #fff; }
@@ -22,7 +22,7 @@
             .gis-table th { background: rgb(var(--gray-50)); padding: .55rem .6rem; text-align: left; font-weight: 700; color: rgb(var(--gray-600)); white-space: nowrap; border-bottom: 1px solid rgb(var(--gray-200)); }
             .dark .gis-table th { background: rgba(255,255,255,.04); color: rgb(var(--gray-300)); border-color: rgba(255,255,255,.1); }
             .gis-table td { padding: .5rem .6rem; border-bottom: 1px solid rgb(var(--gray-100)); color: rgb(var(--gray-700)); }
-            .dark .gis-table td { color: rgb(var(--gray-200)); border-color: rgba(255,255,258,.08); }
+            .dark .gis-table td { color: rgb(var(--gray-200)); border-color: rgba(255,255,255,.08); }
             .gis-table td.right { text-align: right; }
             .gis-table td.center { text-align: center; }
             .gis-badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: .1rem .45rem; font-size: .65rem; font-weight: 700; }
@@ -30,7 +30,15 @@
             .gis-badge-info { background: rgb(var(--info-50)); color: rgb(var(--info-700)); }
             .dark .gis-badge-success { background: rgba(34,197,94,.2); color: #86efac; }
             .dark .gis-badge-info { background: rgba(59,130,246,.2); color: #93c5fd; }
-            #map { height: 480px; width: 100%; border-radius: .6rem; z-index: 10; }
+            #map { height: 500px; width: 100%; border-radius: .6rem; z-index: 10; }
+            @keyframes pulse-ring {
+                0% { transform: scale(0.95); opacity: 0.8; }
+                50% { transform: scale(1.3); opacity: 0.4; }
+                100% { transform: scale(0.95); opacity: 0.8; }
+            }
+            .sppg-hub-pulse {
+                animation: pulse-ring 2s infinite ease-in-out;
+            }
         </style>
     @endpush
 
@@ -80,8 +88,18 @@
 
         <div class="gis-card">
             <div class="gis-card-header">
-                <div class="gis-card-title">Peta Cabang &amp; Rute Pengantaran (GIS Central Hub)</div>
-                <div style="font-size:.75rem;color:rgb(var(--gray-500)">Titik hijau = Pusat SPPG &middot; Titik biru = Lembaga / Posyandu</div>
+                <div>
+                    <div class="gis-card-title">Peta Cabang &amp; Rute Pengantaran (GIS Central Hub)</div>
+                    <div style="font-size:.75rem;color:rgb(var(--gray-500));margin-top:2px;">Titik hijau (Rumah) = Pusat SPPG &middot; Titik biru/hijau = Sekolah &amp; Posyandu</div>
+                </div>
+                <div style="display:flex;gap:.5rem;align-items:center;">
+                    <button type="button" id="start-sim" style="background:#059669;color:#fff;padding:.35rem .75rem;border-radius:.4rem;font-size:.75rem;font-weight:bold;cursor:pointer;border:0;box-shadow:0 1px 2px rgba(0,0,0,0.1);">
+                        🚚 Mulai Simulasi Pengantaran
+                    </button>
+                    <button type="button" id="stop-sim" style="background:#dc2626;color:#fff;padding:.35rem .75rem;border-radius:.4rem;font-size:.75rem;font-weight:bold;cursor:pointer;border:0;display:none;box-shadow:0 1px 2px rgba(0,0,0,0.1);">
+                        ⏹ Reset Simulasi
+                    </button>
+                </div>
             </div>
             <div class="gis-card-body">
                 <div id="map"></div>
@@ -91,7 +109,7 @@
         <div class="gis-card">
             <div class="gis-card-header">
                 <div class="gis-card-title">Daftar Rute &amp; Jarak Pengantaran per Lembaga</div>
-                <div style="font-size:.75rem;color:rgb(var(--gray-500)">Urutan berdasarkan kedekatan jarak dari pusat SPPG</div>
+                <div style="font-size:.75rem;color:rgb(var(--gray-500))">Urutan berdasarkan kedekatan jarak dari pusat SPPG</div>
             </div>
             <div style="overflow-x:auto">
                 <table class="gis-table">
@@ -162,19 +180,20 @@
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(map);
 
-                // SPPG Central Marker
+                // SPPG Central Marker with pulse ring
                 const sppgIcon = L.divIcon({
                     className: 'custom-sppg-marker',
-                    html: '<div style="background:#059669;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;">🏠</div>',
+                    html: '<div style="position:relative;"><div style="position:absolute;top:-6px;left:-6px;width:44px;height:44px;border-radius:50%;background:#059669;opacity:0.3;" class="sppg-hub-pulse"></div><div style="background:#059669;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.4);border:2px solid #fff;position:relative;z-index:2;">🏠</div></div>',
                     iconSize: [32, 32],
                     iconAnchor: [16, 16]
                 });
 
                 const sppgMarker = L.marker([sppgLat, sppgLng], { icon: sppgIcon }).addTo(map);
-                sppgMarker.bindPopup(`<b>${sppgName} (Pusat SPPG)</b><br>Koordinat: ${sppgLat}, ${sppgLng}`);
+                sppgMarker.bindPopup(`<b>${sppgName} (Pusat SPPG Hub)</b><br>Koordinat: ${sppgLat}, ${sppgLng}`);
 
                 const institutions = @json($institutions);
                 const latLngs = [[sppgLat, sppgLng]];
+                let instMarkers = [];
 
                 institutions.forEach(inst => {
                     if (inst.latitude && inst.longitude) {
@@ -182,11 +201,12 @@
                         const instLng = parseFloat(inst.longitude);
                         latLngs.push([instLat, instLng]);
 
+                        const isSekolah = inst.tipe === 'sekolah';
                         const instIcon = L.divIcon({
                             className: 'custom-inst-marker',
-                            html: `<div style="background:${inst.tipe === 'sekolah' ? '#2563eb' : '#10b981'};color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.3);border:2px solid #fff;">📍</div>`,
-                            iconSize: [26, 26],
-                            iconAnchor: [13, 13]
+                            html: `<div style="background:${isSekolah ? '#2563eb' : '#10b981'};color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;">📍</div>`,
+                            iconSize: [28, 28],
+                            iconAnchor: [14, 14]
                         });
 
                         const marker = L.marker([instLat, instLng], { icon: instIcon }).addTo(map);
@@ -196,13 +216,14 @@
                             Jarak ke SPPG: <b>${inst.distance !== null ? inst.distance + ' KM' : '-'}</b><br>
                             Penerima Aktif: <b>${inst.beneficiaries_count} orang</b>
                         `);
+                        instMarkers.push({ marker, lat: instLat, lng: instLng, data: inst });
 
                         // Draw routing line from SPPG to Institution
                         L.polyline([[sppgLat, sppgLng], [instLat, instLng]], {
-                            color: inst.tipe === 'sekolah' ? '#3b82f6' : '#10b981',
-                            weight: 2,
-                            opacity: 0.6,
-                            dashArray: '4, 4'
+                            color: isSekolah ? '#3b82f6' : '#10b981',
+                            weight: 2.5,
+                            opacity: 0.65,
+                            dashArray: '5, 5'
                         }).addTo(map);
                     }
                 });
@@ -211,6 +232,87 @@
                     const bounds = L.latLngBounds(latLngs);
                     map.fitBounds(bounds, { padding: [50, 50] });
                 }
+
+                // Delivery Animation Logic
+                let activeAnimations = [];
+
+                function startSimulation() {
+                    // Reset any running animations
+                    stopSimulation();
+
+                    document.getElementById('start-sim').style.display = 'none';
+                    document.getElementById('stop-sim').style.display = 'inline-block';
+
+                    instMarkers.forEach((item, index) => {
+                        const carIcon = L.divIcon({
+                            className: 'custom-car-marker',
+                            html: '<div style="background:#f59e0b;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 8px rgba(0,0,0,0.4);border:2px solid #fff;">🚚</div>',
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 16]
+                        });
+
+                        const carMarker = L.marker([sppgLat, sppgLng], { icon: carIcon }).addTo(map);
+                        activeAnimations.push(carMarker);
+
+                        const duration = 3000; // 3 seconds per delivery run
+                        const startTime = performance.now() + (index * 400); // Staggered delay
+
+                        function animateFrame(now) {
+                            if (now < startTime) {
+                                activeAnimations.push(requestAnimationFrame(animateFrame));
+                                return;
+                            }
+
+                            const elapsed = now - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+
+                            // Smooth step
+                            const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+                            const curLat = sppgLat + (item.lat - sppgLat) * ease;
+                            const curLng = sppgLng + (item.lng - sppgLng) * ease;
+
+                            carMarker.setLatLng([curLat, curLng]);
+
+                            if (progress < 1) {
+                                activeAnimations.push(requestAnimationFrame(animateFrame));
+                            } else {
+                                // Reached destination
+                                carMarker.setIcon(L.divIcon({
+                                    className: 'custom-car-done',
+                                    html: '<div style="background:#10b981;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 3px 8px rgba(0,0,0,0.4);border:2px solid #fff;">✅</div>',
+                                    iconSize: [30, 30],
+                                    iconAnchor: [15, 15]
+                                }));
+                                carMarker.bindPopup(`<b>📦 Makanan Bergizi Tiba!</b><br>${item.data.nama}<br>Jarak: ${item.data.distance} KM`).openPopup();
+                            }
+                        }
+
+                        activeAnimations.push(requestAnimationFrame(animateFrame));
+                    });
+                }
+
+                function stopSimulation() {
+                    activeAnimations.forEach(anim => {
+                        if (typeof anim === 'number') {
+                            cancelAnimationFrame(anim);
+                        } else if (anim && anim.remove) {
+                            anim.remove();
+                        }
+                    });
+                    activeAnimations = [];
+                    document.getElementById('stop-sim').style.display = 'none';
+                    document.getElementById('start-sim').style.display = 'inline-block';
+                }
+
+                document.getElementById('start-sim').addEventListener('click', startSimulation);
+                document.getElementById('stop-sim').addEventListener('click', function() {
+                    stopSimulation();
+                    location.reload();
+                });
+
+                // Auto start simulation after 1.5 seconds
+                setTimeout(startSimulation, 1500);
             });
         </script>
     @endpush

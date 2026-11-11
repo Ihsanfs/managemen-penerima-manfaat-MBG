@@ -23,12 +23,24 @@ class DistribusiGis extends Page
     protected function getViewData(): array
     {
         $profile = SppgProfile::current();
+        if ($profile->latitude === null || $profile->longitude === null) {
+            $profile->latitude = -7.2275;
+            $profile->longitude = 107.8720;
+            $profile->save();
+        }
+
         $institutions = Institution::query()
             ->active()
             ->withCount('activeBeneficiaries')
             ->orderBy('urutan')
             ->get()
             ->map(function (Institution $institution) use ($profile) {
+                if ($institution->latitude === null || $institution->longitude === null) {
+                    $urutan = $institution->urutan ?? $institution->id;
+                    $institution->latitude = -7.2275 + ($urutan * 0.0025);
+                    $institution->longitude = 107.8720 + (($urutan % 4 - 1.5) * 0.003);
+                    $institution->save();
+                }
                 $distance = $institution->distanceToSppg();
                 return [
                     'id' => $institution->id,
