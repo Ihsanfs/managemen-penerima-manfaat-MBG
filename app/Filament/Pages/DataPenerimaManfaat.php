@@ -101,6 +101,13 @@ class DataPenerimaManfaat extends Page
             ->format('Y-m');
     }
 
+    public function cetakPdf()
+    {
+        $url = route('unduhan.cetak-penerima', ['tanggal' => $this->tanggal]);
+
+        return redirect()->to($url);
+    }
+
     public function simpanHariIni(): void
     {
         try {

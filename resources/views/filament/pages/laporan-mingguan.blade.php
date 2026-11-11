@@ -76,8 +76,15 @@
                 <x-filament::button color="gray" size="sm" icon="heroicon-m-chevron-right" wire:click="geserMinggu(1)">
                     Minggu Depan
                 </x-filament::button>
-                <x-filament::button color="gray" size="sm" icon="heroicon-o-printer" onclick="window.print()">
-                    Cetak
+                <x-filament::button
+                    color="gray"
+                    icon="heroicon-o-printer"
+                    size="sm"
+                    wire:click="cetakPdf"
+                    wire:loading.attr="disabled"
+                >
+                    <span wire:loading.remove wire:target="cetakPdf">Cetak PDF</span>
+                    <span wire:loading wire:target="cetakPdf">Memproses...</span>
                 </x-filament::button>
             </div>
         </div>

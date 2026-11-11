@@ -49,6 +49,13 @@ class LaporanMingguan extends Page
         $this->minggu = today()->startOfWeek(Carbon::MONDAY)->toDateString();
     }
 
+    public function cetakPdf()
+    {
+        $url = route('unduhan.cetak-laporan-mingguan', ['minggu' => $this->minggu]);
+
+        return redirect()->to($url);
+    }
+
     protected function getViewData(): array
     {
         $start = Carbon::parse($this->minggu)->startOfWeek(Carbon::MONDAY);

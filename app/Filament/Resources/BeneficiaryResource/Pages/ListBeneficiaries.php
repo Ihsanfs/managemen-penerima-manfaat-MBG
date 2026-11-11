@@ -67,7 +67,7 @@ class ListBeneficiaries extends ListRecords
 
                     $url = route('unduhan.cetak-daftar-penerima', $params);
 
-                    $this->js("window.open('{$url}', '_blank')");
+                    $this->js("window.location.href = '{$url}'");
                 }),
             Actions\Action::make('imporEkspor')
                 ->label('Impor / Ekspor')

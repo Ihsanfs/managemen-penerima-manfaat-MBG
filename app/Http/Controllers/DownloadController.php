@@ -624,4 +624,27 @@ class DownloadController extends Controller
             ],
         ], 'riwayat-harian-' . now()->format('Ymd-His') . '.xlsx');
     }
+
+    public function cetakLaporanMingguan(): Response
+    {
+        $minggu = request()->query('minggu');
+
+        try {
+            $start = $minggu ? Carbon::parse($minggu)->startOfWeek(Carbon::MONDAY) : today()->startOfWeek(Carbon::MONDAY);
+        } catch (\Throwable) {
+            $start = today()->startOfWeek(Carbon::MONDAY);
+        }
+
+        $data = app(DailyReportService::class)->weeklyData($start);
+
+        $pdf = Pdf::loadView('pdf.laporan-mingguan', [
+            'profile' => SppgProfile::current(),
+            'mingguMulai' => $start,
+            'akhir_minggu' => $start->copy()->addDays(4),
+            ...$data,
+            'dicetak' => now()->locale('id')->translatedFormat('d F Y H:i') . ' WIB',
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('laporan-mingguan-' . $start->format('Y-m-d') . '.pdf');
+    }
 }

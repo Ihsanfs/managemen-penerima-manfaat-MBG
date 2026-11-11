@@ -124,15 +124,14 @@
                 </x-filament::button>
 
                 <x-filament::button
-                    tag="a"
-                    href="{{ route('unduhan.cetak-penerima', ['tanggal' => $tanggalAktif->toDateString()]) }}"
-                    target="_blank"
-                    rel="noopener"
                     color="gray"
                     icon="heroicon-o-printer"
                     size="sm"
+                    wire:click="cetakPdf"
+                    wire:loading.attr="disabled"
                 >
-                    Cetak PDF
+                    <span wire:loading.remove wire:target="cetakPdf">Cetak PDF</span>
+                    <span wire:loading wire:target="cetakPdf">Memproses...</span>
                 </x-filament::button>
             </div>
         </div>

@@ -165,4 +165,22 @@ class FilamentPagesTest extends TestCase
         $this->assertSame($previous->total, $created->total);
         $this->assertSame($previous->details()->count(), $created->details()->count());
     }
+
+    public function test_cetak_pdf_dari_halaman_utama(): void
+    {
+        Livewire::actingAs($this->admin)
+            ->test(DataPenerimaManfaat::class)
+            ->call('cetakPdf')
+            ->assertRedirect();
+    }
+
+    public function test_cetak_laporan_mingguan_menghasilkan_pdf(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->get(route('unduhan.cetak-laporan-mingguan', ['minggu' => today()->startOfWeek(Carbon::MONDAY)->toDateString()]));
+
+        $response->assertOk();
+        $this->assertStringContainsString('application/pdf', (string) $response->headers->get('content-type'));
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
 }
