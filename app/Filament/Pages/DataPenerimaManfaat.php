@@ -24,6 +24,26 @@ class DataPenerimaManfaat extends Page
 
     protected static string $view = 'filament.pages.data-penerima-manfaat';
 
+    public static function getNavigationBadge(): ?string
+    {
+        $todaySaved = DailyReport::query()
+            ->whereDate('tanggal', today())
+            ->where('sumber', 'manual')
+            ->exists();
+
+        return $todaySaved ? '✓ Selesai' : '⚠️ Belum Disimpan';
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        $todaySaved = DailyReport::query()
+            ->whereDate('tanggal', today())
+            ->where('sumber', 'manual')
+            ->exists();
+
+        return $todaySaved ? 'success' : 'danger';
+    }
+
     public string $tanggal;
 
     public string $bulan;
