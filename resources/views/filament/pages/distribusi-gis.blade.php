@@ -180,17 +180,30 @@
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(map);
 
-                // Regional boundary from wilayah_boundaries (Kecamatan Samarang)
-                const samarangBoundary = @json($samarangBoundary);
-                if (samarangBoundary && samarangBoundary.length > 0) {
-                    L.polygon(samarangBoundary, {
+                // Kabupaten boundary (wider scope)
+                const kabBoundary = @json($kabupatenBoundary);
+                if (kabBoundary && kabBoundary.length > 0) {
+                    L.polygon(kabBoundary, {
+                        color: '#2563eb',
+                        weight: 2,
+                        opacity: 0.6,
+                        fillColor: '#3b82f6',
+                        fillOpacity: 0.03,
+                        dashArray: '8, 8'
+                    }).addTo(map).bindPopup('<b>Batas Wilayah Kabupaten / Regional</b><br>cahyadsn/wilayah_boundaries');
+                }
+
+                // Kecamatan boundary (focused district scope)
+                const kecBoundary = @json($kecamatanBoundary);
+                if (kecBoundary && kecBoundary.length > 0) {
+                    L.polygon(kecBoundary, {
                         color: '#059669',
-                        weight: 2.5,
-                        opacity: 0.85,
+                        weight: 3,
+                        opacity: 0.9,
                         fillColor: '#10b981',
-                        fillOpacity: 0.1,
-                        dashArray: '5, 5'
-                    }).addTo(map).bindPopup('<b>Batas Wilayah Administrasi Kecamatan Samarang</b><br>Kabupaten Garut, Jawa Barat (cahyadsn/wilayah_boundaries)');
+                        fillOpacity: 0.12,
+                        dashArray: '4, 4'
+                    }).addTo(map).bindPopup('<b>Batas Wilayah Administrasi Kecamatan ({{ $profile->kecamatan ?? "Samarang" }})</b><br>Kabupaten {{ $profile->kabupaten ?? "Garut" }}');
                 }
 
                 // SPPG Central Marker with pulse ring

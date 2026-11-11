@@ -60,8 +60,7 @@ class DistribusiGis extends Page
         $maxDistance = $institutions->max('distance') ?? 0;
         $avgDistance = $institutions->whereNotNull('distance')->avg('distance') ?? 0;
 
-        $boundaryFile = storage_path('app/samarang_boundary.json');
-        $samarangBoundary = file_exists($boundaryFile) ? json_decode(file_get_contents($boundaryFile), true) : [];
+        $boundaries = $this->getBoundaries($profile->kecamatan ?? 'Samarang', $profile->kabupaten ?? 'Garut');
 
         return [
             'profile' => $profile,
@@ -70,7 +69,49 @@ class DistribusiGis extends Page
             'avgDistance' => round($avgDistance, 2),
             'totalInstitutions' => $institutions->count(),
             'totalBeneficiaries' => $institutions->sum('beneficiaries_count'),
-            'samarangBoundary' => $samarangBoundary,
+            'kecamatanBoundary' => $boundaries['kecamatan'],
+            'kabupatenBoundary' => $boundaries['kabupaten'],
+        ];
+    }
+
+    protected function getBoundaries(string $kecamatanName = 'Samarang', string $kabupatenName = 'Garut'): array
+    {
+        $kecamatanBoundary = [];
+        $kabupatenBoundary = [];
+
+        $kecFiles = glob(storage_path('wilayah/db/kec/wilayah_boundaries_kec_*.sql'));
+        foreach ($kecFiles as $file) {
+            $handle = @fopen($file, 'r');
+            if (!$handle) continue;
+            while (($line = fgets($handle)) !== false) {
+                if (stripos($line, $kecamatanName) !== false) {
+                    if (preg_match("/'(\[\[\[.*?\]\]\])'/s", $line, $m)) {
+                        $kecamatanBoundary = json_decode($m[1], true);
+                        break 2;
+                    }
+                }
+            }
+            fclose($handle);
+        }
+
+        $kabFiles = glob(storage_path('wilayah/db/kab/wilayah_boundaries_kab_*.sql'));
+        foreach ($kabFiles as $file) {
+            $handle = @fopen($file, 'r');
+            if (!$handle) continue;
+            while (($line = fgets($handle)) !== false) {
+                if (stripos($line, $kabupatenName) !== false) {
+                    if (preg_match("/'(\[\[\[.*?\]\]\])'/s", $line, $m)) {
+                        $kabupatenBoundary = json_decode($m[1], true);
+                        break 2;
+                    }
+                }
+            }
+            fclose($handle);
+        }
+
+        return [
+            'kecamatan' => $kecamatanBoundary,
+            'kabupaten' => $kabupatenBoundary,
         ];
     }
 
