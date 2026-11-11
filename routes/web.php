@@ -17,4 +17,5 @@ Route::middleware(['auth', 'throttle:30,1'])->prefix('unduhan')->name('unduhan.'
     Route::get('cetak-penerima', [DownloadController::class, 'cetakPenerimaManfaat'])->name('cetak-penerima');
     Route::get('cetak-daftar-penerima', [DownloadController::class, 'cetakDaftarPenerima'])->name('cetak-daftar-penerima');
     Route::get('cetak-laporan-mingguan', [DownloadController::class, 'cetakLaporanMingguan'])->name('cetak-laporan-mingguan');
+    Route::get('cetak-distribusi-gis', [DownloadController::class, 'cetakDistribusiGis'])->name('cetak-distribusi-gis');
 });

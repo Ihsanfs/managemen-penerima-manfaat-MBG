@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Beneficiary;
+use App\Models\BeneficiaryHistory;
 use App\Models\Category;
 use App\Models\DailyReport;
 use App\Models\Institution;
@@ -524,6 +525,7 @@ class DownloadController extends Controller
             'jumlahPenerimaAktif' => Beneficiary::query()->where('status', 'aktif')->count(),
             'jumlahLembaga' => Institution::query()->count(),
             'jumlahLaporan' => DailyReport::query()->count(),
+            'jumlahRiwayat' => BeneficiaryHistory::query()->count(),
         ];
     }
 
@@ -646,5 +648,46 @@ class DownloadController extends Controller
         ])->setPaper('a4', 'portrait');
 
         return $pdf->stream('laporan-mingguan-' . $start->format('Y-m-d') . '.pdf');
+    }
+
+    public function cetakDistribusiGis(): Response
+    {
+        $profile = SppgProfile::current();
+        $institutions = Institution::query()
+            ->active()
+            ->withCount('activeBeneficiaries')
+            ->orderBy('urutan')
+            ->get()
+            ->map(function (Institution $institution) use ($profile) {
+                $distance = $institution->distanceToSppg();
+                return [
+                    'id' => $institution->id,
+                    'nama' => $institution->nama,
+                    'tipe' => $institution->tipe,
+                    'jenjang' => $institution->jenjang_label,
+                    'alamat' => $institution->alamat,
+                    'latitude' => $institution->latitude,
+                    'longitude' => $institution->longitude,
+                    'distance' => $distance,
+                    'beneficiaries_count' => $institution->active_beneficiaries_count,
+                ];
+            })
+            ->sortBy('distance')
+            ->values();
+
+        $maxDistance = $institutions->max('distance') ?? 0;
+        $avgDistance = $institutions->whereNotNull('distance')->avg('distance') ?? 0;
+
+        $pdf = Pdf::loadView('pdf.distribusi-gis', [
+            'profile' => $profile,
+            'institutions' => $institutions,
+            'maxDistance' => round($maxDistance, 2),
+            'avgDistance' => round($avgDistance, 2),
+            'totalInstitutions' => $institutions->count(),
+            'totalBeneficiaries' => $institutions->sum('beneficiaries_count'),
+            'dicetak' => now()->locale('id')->translatedFormat('d F Y H:i') . ' WIB',
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('peta-distribusi-sppg-' . now()->format('Ymd-His') . '.pdf');
     }
 }

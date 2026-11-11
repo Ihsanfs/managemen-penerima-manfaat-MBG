@@ -37,6 +37,8 @@ class Institution extends Model
         'telepon',
         'urutan',
         'is_active',
+        'latitude',
+        'longitude',
     ];
 
     protected function casts(): array
@@ -44,7 +46,31 @@ class Institution extends Model
         return [
             'is_active' => 'boolean',
             'urutan' => 'integer',
+            'latitude' => 'decimal:8',
+            'longitude' => 'decimal:8',
         ];
+    }
+
+    public function distanceToSppg(): ?float
+    {
+        $sppg = SppgProfile::current();
+        if ($this->latitude === null || $this->longitude === null || $sppg->latitude === null || $sppg->longitude === null) {
+            return null;
+        }
+
+        $earthRadius = 6371; // km
+        $latFrom = deg2rad((float) $sppg->latitude);
+        $lonFrom = deg2rad((float) $sppg->longitude);
+        $latTo = deg2rad((float) $this->latitude);
+        $lonTo = deg2rad((float) $this->longitude);
+
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+
+        $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+            cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+
+        return round($earthRadius * $angle, 2);
     }
 
     public function beneficiaries(): HasMany

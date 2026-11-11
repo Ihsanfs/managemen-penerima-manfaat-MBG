@@ -183,4 +183,22 @@ class FilamentPagesTest extends TestCase
         $this->assertStringContainsString('application/pdf', (string) $response->headers->get('content-type'));
         $this->assertStringStartsWith('%PDF', $response->getContent());
     }
+
+    public function test_halaman_distribusi_gis_dapat_dibuka(): void
+    {
+        $this->actingAs($this->admin)
+            ->get('/admin/distribusi-gis')
+            ->assertOk()
+            ->assertSee('Peta & Jalur Distribusi SPPG');
+    }
+
+    public function test_cetak_distribusi_gis_menghasilkan_pdf(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->get(route('unduhan.cetak-distribusi-gis'));
+
+        $response->assertOk();
+        $this->assertStringContainsString('application/pdf', (string) $response->headers->get('content-type'));
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
 }

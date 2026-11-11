@@ -127,6 +127,18 @@ class InstitutionResource extends Resource
                             ->label('Alamat')
                             ->rows(2)
                             ->columnSpanFull(),
+                        Forms\Components\TextInput::make('latitude')
+                            ->label('Latitude (Lintang)')
+                            ->numeric()
+                            ->step('any')
+                            ->placeholder('-7.22750000')
+                            ->helperText('Titik koordinat lintang lembaga (GPS).'),
+                        Forms\Components\TextInput::make('longitude')
+                            ->label('Longitude (Bujur)')
+                            ->numeric()
+                            ->step('any')
+                            ->placeholder('107.87200000')
+                            ->helperText('Titik koordinat bujur lembaga (GPS).'),
                         Forms\Components\Select::make('urutan')
                             ->label('Urutan Tampil')
                             ->options(function (?Institution $record) {

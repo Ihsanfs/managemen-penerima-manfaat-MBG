@@ -28,6 +28,8 @@ class SppgSeeder extends Seeder
             'kabupaten' => 'Garut',
             'provinsi' => 'Jawa Barat',
             'kepala_sppg' => 'Petugas SPPG Samarang',
+            'latitude' => -7.2275,
+            'longitude' => 107.8720,
         ]);
 
         $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
@@ -64,6 +66,8 @@ class SppgSeeder extends Seeder
                         'jenjang' => $data['jenjang'] ?? null,
                         'urutan' => $data['urutan'],
                         'is_active' => true,
+                        'latitude' => -7.2275 + ($data['urutan'] * 0.0025),
+                        'longitude' => 107.8720 + (($data['urutan'] % 4 - 1.5) * 0.003),
                     ],
                 );
 

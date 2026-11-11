@@ -61,6 +61,18 @@ class SppgProfileResource extends Resource
                         Forms\Components\TextInput::make('provinsi')
                             ->label('Provinsi')
                             ->maxLength(255),
+                        Forms\Components\TextInput::make('latitude')
+                            ->label('Latitude Pusat (Lintang SPPG)')
+                            ->numeric()
+                            ->step('any')
+                            ->placeholder('-7.22750000')
+                            ->helperText('Koordinat pusat (hub) pengantaran SPPG.'),
+                        Forms\Components\TextInput::make('longitude')
+                            ->label('Longitude Pusat (Bujur SPPG)')
+                            ->numeric()
+                            ->step('any')
+                            ->placeholder('107.87200000')
+                            ->helperText('Koordinat pusat (hub) pengantaran SPPG.'),
                     ])
                     ->columns(2),
             ]);

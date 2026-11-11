@@ -193,7 +193,7 @@
                                 @forelse ($sekolah as $row)
                                     @php
                                         $encUrl = \App\Filament\Resources\BeneficiaryResource::getUrl('index', [
-                                            'enc' => encrypt(json_encode(['institution_id' => ['value' => $row['id']]]))
+                                            'enc' => encrypt(json_encode(['institution_id' => $row['id']]))
                                         ]);
                                     @endphp
                                     <tr>
@@ -256,7 +256,7 @@
                                 @forelse ($posyandu as $row)
                                     @php
                                         $encUrl = \App\Filament\Resources\BeneficiaryResource::getUrl('index', [
-                                            'enc' => encrypt(json_encode(['institution_id' => ['value' => $row['id']]]))
+                                            'enc' => encrypt(json_encode(['institution_id' => $row['id']]))
                                         ]);
                                     @endphp
                                     <tr>
