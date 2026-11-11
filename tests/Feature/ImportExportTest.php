@@ -393,7 +393,8 @@ class ImportExportTest extends TestCase
                 'status' => 'aktif',
             ])
             ->call('create')
-            ->assertHasNoFormErrors();
+            ->assertHasNoFormErrors()
+            ->assertRedirect(\App\Filament\Pages\DataPenerimaManfaat::getUrl());
 
         $this->assertDatabaseHas('beneficiaries', [
             'institution_id' => $institution->id,

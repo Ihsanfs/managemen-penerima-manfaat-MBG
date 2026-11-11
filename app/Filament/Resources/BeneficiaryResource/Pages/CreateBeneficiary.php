@@ -60,6 +60,17 @@ class CreateBeneficiary extends CreateRecord
         return parent::handleRecordCreation($data);
     }
 
+    protected function getRedirectUrl(): string
+    {
+        $data = $this->form->getState();
+
+        if (($data['input_mode'] ?? 'individu') === 'agregat') {
+            return \App\Filament\Pages\DataPenerimaManfaat::getUrl();
+        }
+
+        return parent::getRedirectUrl();
+    }
+
     protected function onValidationError(ValidationException $exception): void
     {
         parent::onValidationError($exception);
