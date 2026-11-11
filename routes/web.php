@@ -15,4 +15,5 @@ Route::middleware(['auth', 'throttle:30,1'])->prefix('unduhan')->name('unduhan.'
     Route::get('export-riwayat', [DownloadController::class, 'exportRiwayat'])->name('export-riwayat');
     Route::get('manual-book', [DownloadController::class, 'manualBook'])->name('manual-book');
     Route::get('cetak-penerima', [DownloadController::class, 'cetakPenerimaManfaat'])->name('cetak-penerima');
+    Route::get('cetak-daftar-penerima', [DownloadController::class, 'cetakDaftarPenerima'])->name('cetak-daftar-penerima');
 });

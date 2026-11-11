@@ -90,7 +90,7 @@ class ImportExportTest extends TestCase
         $result = $component->get('hasilPenerima');
 
         $this->assertSame(1, $result['dibuat']);
-        $this->assertSame(0, $result['diperbarui']);
+        $this->assertSame(0, $result['duplikat']);
         $this->assertSame(1, $result['gagal']);
         $this->assertSame(2, $result['total']);
 
@@ -118,7 +118,7 @@ class ImportExportTest extends TestCase
         $this->assertStringContainsString('penerima-uji.csv', $history->alasan);
     }
 
-    public function test_impor_ulang_penerima_memperbarui_data_dan_mencatat_perubahan(): void
+    public function test_impor_ulang_penerima_dilewati_sebagai_duplikat(): void
     {
         $csvAwal = implode("\n", [
             'nama_lembaga,nama,nik,jenis_kelamin,kategori,kelas,status',
@@ -127,40 +127,31 @@ class ImportExportTest extends TestCase
 
         $this->importPenerimaCsv('awal.csv', $csvAwal);
 
-        $csvPerbarui = implode("\n", [
+        $csvUlang = implode("\n", [
             'nama_lembaga,nama,nik,jenis_kelamin,kategori,kelas,status',
-            'SDN 1 Samarang,Siswa Impor Ulang,3200000000000092,L,sd,6,pindah',
+            'SDN 1 Samarang,Siswa Impor Ulang,3200000000000092,L,sd,5,aktif',
         ]);
 
-        $component = $this->importPenerimaCsv('perbarui.csv', $csvPerbarui);
+        $component = $this->importPenerimaCsv('ulang.csv', $csvUlang);
 
         $result = $component->get('hasilPenerima');
 
         $this->assertSame(0, $result['dibuat']);
-        $this->assertSame(1, $result['diperbarui']);
+        $this->assertSame(1, $result['duplikat']);
         $this->assertSame(1, $result['total']);
 
         $this->assertDatabaseHas('beneficiaries', [
             'nama' => 'Siswa Impor Ulang',
-            'kelas' => 6,
-            'status' => 'pindah',
+            'kelas' => 5,
         ]);
-
-        $history = BeneficiaryHistory::query()
-            ->where('beneficiary_nama', 'Siswa Impor Ulang')
-            ->where('aksi', 'diperbarui')
-            ->firstOrFail();
-
-        $this->assertStringContainsString('perbarui.csv', $history->alasan);
-        $this->assertNotEmpty($history->perubahan);
     }
 
-    public function test_impor_lembaga_dari_csv_membuat_dan_memperbarui(): void
+    public function test_impor_lembaga_dari_csv_membuat_dan_mendeteksi_duplikat(): void
     {
         $csv = implode("\n", [
             'nama,tipe,jenjang,alamat,penanggung_jawab,telepon,urutan,is_active',
             'SDN Impor Baru,sekolah,sd,Jalan Baru 1,Bu Guru,08123456789,,aktif',
-            'SDN 1 Samarang,sekolah,sd,Jalan Diperbarui,Kepala Baru,081200000000,,aktif',
+            'SDN 1 Samarang,sekolah,sd,Jalan Lama,Kepala Lama,081200000000,,aktif',
         ]);
 
         $upload = UploadedFile::fake()->createWithContent('lembaga-uji.csv', $csv);
@@ -173,7 +164,7 @@ class ImportExportTest extends TestCase
         $result = $component->get('hasilLembaga');
 
         $this->assertSame(1, $result['dibuat']);
-        $this->assertSame(1, $result['diperbarui']);
+        $this->assertSame(1, $result['duplikat']);
         $this->assertSame(0, $result['gagal']);
 
         $this->assertDatabaseHas('institutions', [
@@ -181,12 +172,6 @@ class ImportExportTest extends TestCase
             'tipe' => 'sekolah',
             'jenjang' => 'sd',
             'alamat' => 'Jalan Baru 1',
-        ]);
-
-        $this->assertDatabaseHas('institutions', [
-            'nama' => 'SDN 1 Samarang',
-            'alamat' => 'Jalan Diperbarui',
-            'penanggung_jawab' => 'Kepala Baru',
         ]);
     }
 
@@ -377,6 +362,20 @@ class ImportExportTest extends TestCase
         $response->assertOk();
         $this->assertStringContainsString('application/pdf', (string) $response->headers->get('content-type'));
         $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_lembaga_dengan_penerima_tidak_dapat_dihapus_dan_bisa_dinonaktifkan(): void
+    {
+        $institution = Institution::query()->where('nama', 'SDN 1 Samarang')->firstOrFail();
+
+        $this->assertGreaterThan(0, $institution->beneficiaries()->count());
+
+        Livewire::actingAs($this->admin)
+            ->test(\App\Filament\Resources\InstitutionResource\Pages\ListInstitutions::class)
+            ->callTableAction('deactivate', $institution)
+            ->assertHasNoTableActionErrors();
+
+        $this->assertFalse($institution->fresh()->is_active);
     }
 
     private function importPenerimaCsv(string $filename, string $content): mixed

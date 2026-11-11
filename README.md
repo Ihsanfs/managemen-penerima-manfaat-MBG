@@ -77,11 +77,11 @@ Segera ganti kata sandi akun bawaan sebelum digunakan di produksi.
 | Menu | Fungsi |
 | --- | --- |
 | **Dasbor** | Statistik penerima, komposisi kategori, dan riwayat simpan terbaru |
-| **Data Penerima Manfaat** | Tabel LIVE per sekolah/posyandu, kalender arsip, simpan hari ini atau tanggal tertentu, cetak |
-| **Lembaga** | CRUD sekolah dan posyandu |
-| **Kategori** | Manajemen kategori penerima manfaat dan lembaga (kode, nama, jenis, grup laporan, aktif/nonaktif) |
-| **Penerima Manfaat** | CRUD data penerima, filter kategori/lembaga/status, alasan wajib saat mengubah/menghapus |
-| **Impor & Ekspor** | Template Excel, impor penerima/lembaga, ekspor penerima/lembaga/riwayat harian |
+| **Data Penerima Manfaat** | Tabel LIVE per sekolah/posyandu (nama lembaga clickable menuju filter penerima), kalender arsip, simpan hari ini atau tanggal tertentu, cetak |
+| **Lembaga** | CRUD sekolah dan posyandu (dilengkapi badge hitung, proteksi penghapusan jika ada penerima, dan opsi nonaktifkan) |
+| **Kategori** | Manajemen kategori penerima manfaat, lembaga, dan jenjang dengan badge hitung dan dropdown urutan interaktif Tersedia/Terpakai |
+| **Penerima Manfaat** | CRUD data penerima, filter kategori/lembaga/status, alasan wajib saat mengubah/menghapus, cetak PDF daftar terfilter |
+| **Impor & Ekspor** | Template Excel dengan contoh valid & petunjuk batas ketentuan, impor anti-duplikat & chunking 500 baris, ekspor lengkap |
 | **Riwayat Harian** | Daftar snapshot harian dan rincian per lembaga |
 | **Laporan Mingguan** | Status Senin–Jumat, 20 hari kerja terakhir, perubahan total |
 | **Log Audit** | Riwayat simpan/update/otomatis beserta selisih total |
@@ -94,10 +94,16 @@ Segera ganti kata sandi akun bawaan sebelum digunakan di produksi.
 
 Buka **Data Master → Impor & Ekspor**.
 
-- **Template Penerima Manfaat**: unduh template `.xlsx` berisi sheet data, petunjuk, referensi lembaga, dan daftar kategori.
-- **Template Lembaga**: unduh template `.xlsx` berisi sheet data, petunjuk, dan referensi nilai.
-- **Impor** menerima `.xlsx`, `.xls`, dan `.csv` (maksimal 10 MB). Hasil menampilkan jumlah dibuat, diperbarui, gagal, serta pesan error per baris.
+- **Template Penerima Manfaat**: unduh template `.xlsx` berisi baris contoh valid, sheet petunjuk & batas ketentuan (maks 10 MB, chunking per 500 baris, anti-duplikat), referensi lembaga, dan daftar kategori.
+- **Template Lembaga**: unduh template `.xlsx` berisi baris contoh valid, petunjuk batas ketentuan, dan referensi nilai.
+- **Impor** menerima `.xlsx`, `.xls`, dan `.csv` (maksimal 10 MB). Hasil menampilkan jumlah dibuat, duplikat (dilewati tanpa menimpa), gagal, serta pesan error per baris.
 - **Ekspor** menghasilkan file Excel untuk data penerima, lembaga, atau seluruh riwayat harian beserta rincian per lembaga.
+
+### Fitur Keamanan & Proteksi Tambahan
+- **Badge Hitung Sidebar**: Navigasi sidebar menampilkan jumlah total lembaga, kategori aktif, dan penerima aktif secara real-time.
+- **Proteksi Penghapusan Lembaga**: Lembaga yang masih memiliki penerima manfaat dilindungi dari penghapusan tidak disengaja (tombol hapus disembunyikan); admin disarankan menggunakan fitur **Nonaktifkan**.
+- **Enkripsi Endpoint**: Parameter query filter dan endpoint sensitif dienkripsi menggunakan token aman (`enc`) untuk mencegah eksposur plaintext.
+- **Validasi Bahasa Indonesia**: Seluruh pesan validasi form (seperti `required` yang menyatakan data tidak boleh kosong) telah diterjemahkan ke dalam Bahasa Indonesia yang ramah pengguna.
 
 ### Kolom wajib impor penerima manfaat
 

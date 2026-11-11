@@ -43,7 +43,7 @@ class InstitutionImportService
     public function __construct(private readonly SpreadsheetService $spreadsheets) {}
 
     /**
-     * @return array{dibuat: int, diperbarui: int, gagal: int, total: int, errors: array<int, array{baris: int, pesan: string}>}
+     * @return array{dibuat: int, duplikat: int, gagal: int, total: int, errors: array<int, array{baris: int, pesan: string}>}
      */
     public function import(string $path, ?string $extension = null): array
     {
@@ -57,7 +57,7 @@ class InstitutionImportService
 
         $result = [
             'dibuat' => 0,
-            'diperbarui' => 0,
+            'duplikat' => 0,
             'gagal' => 0,
             'total' => count($parsed['rows']),
             'errors' => [],
@@ -65,72 +65,77 @@ class InstitutionImportService
 
         $nextUrutan = ((int) Institution::query()->max('urutan')) + 1;
 
-        foreach ($parsed['rows'] as $row) {
-            $line = (int) ($row['__baris'] ?? 0);
+        // Chunk rows (e.g. 500 per chunk) to protect server memory and prevent overload
+        $chunks = array_chunk($parsed['rows'], 500);
 
-            try {
-                $values = $this->mapRow($row, self::HEADER_ALIASES);
+        foreach ($chunks as $chunk) {
+            foreach ($chunk as $row) {
+                $line = (int) ($row['__baris'] ?? 0);
 
-                $nama = $this->text($values['nama'] ?? null);
+                try {
+                    $values = $this->mapRow($row, self::HEADER_ALIASES);
 
-                if ($nama === '') {
-                    throw new InvalidArgumentException('Kolom nama wajib diisi.');
-                }
+                    $nama = $this->text($values['nama'] ?? null);
 
-                $tipe = $this->normalizeAlias($values['tipe'] ?? null, self::TIPE_ALIASES);
-
-                if (! $tipe) {
-                    throw new InvalidArgumentException("Tipe lembaga harus 'sekolah' atau 'posyandu'.");
-                }
-
-                $jenjang = null;
-
-                if ($this->text($values['jenjang'] ?? null) !== '') {
-                    $jenjang = $this->resolveJenjang($values['jenjang'] ?? null);
-
-                    if (! $jenjang) {
-                        throw new InvalidArgumentException("Jenjang '" . $this->text($values['jenjang'] ?? null) . "' tidak dikenal. Pilihan: " . implode(', ', array_keys(Category::optionsJenjang() ?: Institution::JENJANG)) . ".");
+                    if ($nama === '') {
+                        throw new InvalidArgumentException('Kolom nama wajib diisi.');
                     }
+
+                    $tipe = $this->normalizeAlias($values['tipe'] ?? null, self::TIPE_ALIASES);
+
+                    if (! $tipe) {
+                        throw new InvalidArgumentException("Tipe lembaga harus 'sekolah' atau 'posyandu'.");
+                    }
+
+                    $jenjang = null;
+
+                    if ($this->text($values['jenjang'] ?? null) !== '') {
+                        $jenjang = $this->resolveJenjang($values['jenjang'] ?? null);
+
+                        if (! $jenjang) {
+                            throw new InvalidArgumentException("Jenjang '" . $this->text($values['jenjang'] ?? null) . "' tidak dikenal. Pilihan: " . implode(', ', array_keys(Category::optionsJenjang() ?: Institution::JENJANG)) . ".");
+                        }
+                    }
+
+                    $isActive = true;
+
+                    if ($this->text($values['is_active'] ?? null) !== '') {
+                        $isActive = $this->normalizeAlias($values['is_active'] ?? null, self::STATUS_ALIASES) === 'aktif';
+                    }
+
+                    $categoryId = $this->resolveCategory($values['category_id'] ?? null);
+
+                    $urutan = $this->integerInRange($values['urutan'] ?? null, 0, 65535, 'Urutan');
+
+                    $existing = $this->findExisting($nama);
+
+                    if ($existing) {
+                        // Anti-duplikat: Jika lembaga sudah ada, lewati dan hitung sebagai duplikat
+                        $result['duplikat']++;
+                    } else {
+                        $payload = [
+                            'nama' => $nama,
+                            'tipe' => $tipe,
+                            'jenjang' => $jenjang,
+                            'category_id' => $categoryId,
+                            'alamat' => $this->nullableText($values['alamat'] ?? null),
+                            'penanggung_jawab' => $this->nullableText($values['penanggung_jawab'] ?? null),
+                            'telepon' => $this->nullableText($values['telepon'] ?? null),
+                            'urutan' => $urutan ?? $nextUrutan,
+                            'is_active' => $isActive,
+                        ];
+
+                        Institution::query()->create($payload);
+                        $nextUrutan++;
+                        $result['dibuat']++;
+                    }
+                } catch (\Throwable $exception) {
+                    $result['gagal']++;
+                    $result['errors'][] = [
+                        'baris' => $line,
+                        'pesan' => $exception->getMessage(),
+                    ];
                 }
-
-                $isActive = true;
-
-                if ($this->text($values['is_active'] ?? null) !== '') {
-                    $isActive = $this->normalizeAlias($values['is_active'] ?? null, self::STATUS_ALIASES) === 'aktif';
-                }
-
-                $categoryId = $this->resolveCategory($values['category_id'] ?? null);
-
-                $urutan = $this->integerInRange($values['urutan'] ?? null, 0, 65535, 'Urutan');
-
-                $existing = $this->findExisting($nama);
-
-                $payload = [
-                    'nama' => $nama,
-                    'tipe' => $tipe,
-                    'jenjang' => $jenjang,
-                    'category_id' => $categoryId,
-                    'alamat' => $this->nullableText($values['alamat'] ?? null),
-                    'penanggung_jawab' => $this->nullableText($values['penanggung_jawab'] ?? null),
-                    'telepon' => $this->nullableText($values['telepon'] ?? null),
-                    'urutan' => $urutan ?? $existing?->urutan ?? $nextUrutan,
-                    'is_active' => $isActive,
-                ];
-
-                if ($existing) {
-                    $existing->fill($payload)->save();
-                    $result['diperbarui']++;
-                } else {
-                    Institution::query()->create($payload);
-                    $nextUrutan++;
-                    $result['dibuat']++;
-                }
-            } catch (\Throwable $exception) {
-                $result['gagal']++;
-                $result['errors'][] = [
-                    'baris' => $line,
-                    'pesan' => $exception->getMessage(),
-                ];
             }
         }
 

@@ -28,6 +28,16 @@ class CategoryResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::withoutGlobalScopes()->count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -57,11 +67,52 @@ class CategoryResource extends Resource
                             ->nullable()
                             ->visible(fn (Get $get): bool => $get('jenis') === Category::JENIS_PENERIMA)
                             ->helperText('Hanya untuk kategori penerima manfaat yang ingin dikomitasi pada laporan harian.'),
-                        Forms\Components\TextInput::make('urutan')
+                        Forms\Components\Select::make('urutan')
                             ->label('Urutan Tampil')
-                            ->numeric()
-                            ->default(0)
-                            ->minValue(0),
+                            ->options(function (?Category $record) {
+                                $used = Category::query()
+                                    ->withoutGlobalScopes()
+                                    ->when($record, fn ($q) => $q->where('id', '!=', $record->id))
+                                    ->pluck('nama', 'urutan')
+                                    ->all();
+
+                                $max = max(30, (int) Category::query()->withoutGlobalScopes()->max('urutan') + 5);
+                                $options = [];
+                                for ($i = 1; $i <= $max; $i++) {
+                                    if (isset($used[$i])) {
+                                        $options[$i] = "Urutan {$i} — Terpakai ({$used[$i]})";
+                                    } else {
+                                        $options[$i] = "Urutan {$i} — Tersedia";
+                                    }
+                                }
+                                return $options;
+                            })
+                            ->default(fn () => (int) (Category::query()->withoutGlobalScopes()->max('urutan') ?? 0) + 1)
+                            ->required()
+                            ->searchable()
+                            ->native(false)
+                            ->helperText('Pilih nomor urut tampil dari dropdown. Nomor yang sudah terpakai ditandai dengan nama kategori.')
+                            ->rules([
+                                function ($get, ?Category $record) {
+                                    return function ($attribute, $value, $fail) use ($record) {
+                                        if ($value === null || $value === '') {
+                                            return;
+                                        }
+
+                                        $value = (int) $value;
+
+                                        $query = Category::query()->withoutGlobalScopes()->where('urutan', $value);
+                                        if ($record) {
+                                            $query->where('id', '!=', $record->id);
+                                        }
+                                        $existing = $query->first();
+
+                                        if ($existing) {
+                                            $fail("⚠️ PERINGATAN DUPLIKAT: Urutan {$value} sudah digunakan oleh kategori '{$existing->nama}'. Mohon pilih nomor urut lain yang masih tersedia.");
+                                        }
+                                    };
+                                },
+                            ]),
                         Forms\Components\Toggle::make('is_active')
                             ->label('Aktif')
                             ->default(true),

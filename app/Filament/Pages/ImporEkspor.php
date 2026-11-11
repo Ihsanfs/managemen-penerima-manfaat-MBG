@@ -128,16 +128,16 @@ class ImporEkspor extends Page
     }
 
     /**
-     * @param  array{dibuat: int, diperbarui: int, gagal: int, total: int, errors: array<int, array{baris: int, pesan: string}>}  $result
+     * @param  array{dibuat: int, duplikat: int, gagal: int, total: int, errors: array<int, array{baris: int, pesan: string}>}  $result
      */
     private function notifyResult(string $label, array $result): void
     {
         $notification = Notification::make()
             ->title('Impor ' . mb_strtolower($label) . ' selesai')
             ->body(sprintf(
-                '%d dibuat, %d diperbarui, %d gagal dari %d baris.',
+                '%d data baru dibuat, %d data duplikat/sudah ada (dilewati), %d gagal dari %d total baris.',
                 $result['dibuat'],
-                $result['diperbarui'],
+                $result['duplikat'],
                 $result['gagal'],
                 $result['total'],
             ));
@@ -152,13 +152,13 @@ class ImporEkspor extends Page
     }
 
     /**
-     * @return array{dibuat: int, diperbarui: int, gagal: int, total: int, errors: array<int, array{baris: int, pesan: string}>}
+     * @return array{dibuat: int, duplikat: int, gagal: int, total: int, errors: array<int, array{baris: int, pesan: string}>}
      */
     private function failureResult(string $message): array
     {
         return [
             'dibuat' => 0,
-            'diperbarui' => 0,
+            'duplikat' => 0,
             'gagal' => 0,
             'total' => 0,
             'errors' => [

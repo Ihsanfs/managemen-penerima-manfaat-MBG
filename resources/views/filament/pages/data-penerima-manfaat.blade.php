@@ -192,10 +192,17 @@
                             </thead>
                             <tbody>
                                 @forelse ($sekolah as $row)
+                                    @php
+                                        $encUrl = \App\Filament\Resources\BeneficiaryResource::getUrl('index', [
+                                            'enc' => encrypt(json_encode(['institution_id' => ['value' => $row['id']]]))
+                                        ]);
+                                    @endphp
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td class="pm-left">
-                                            <span class="pm-name">{{ $row['nama'] }}</span>
+                                            <a href="{{ $encUrl }}" class="pm-name" style="color: rgb(var(--primary-600)); text-decoration: none; cursor: pointer;" title="Klik untuk melihat daftar penerima manfaat lembaga ini" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                                                {{ $row['nama'] }}
+                                            </a>
                                             @if ($row['jenjang'])
                                                 <span class="pm-badge pm-badge-info">{{ \App\Models\Institution::JENJANG[$row['jenjang']] ?? $row['jenjang'] }}</span>
                                             @endif
@@ -248,10 +255,17 @@
                             </thead>
                             <tbody>
                                 @forelse ($posyandu as $row)
+                                    @php
+                                        $encUrl = \App\Filament\Resources\BeneficiaryResource::getUrl('index', [
+                                            'enc' => encrypt(json_encode(['institution_id' => ['value' => $row['id']]]))
+                                        ]);
+                                    @endphp
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td class="pm-left">
-                                            <span class="pm-name">{{ $row['nama'] }}</span>
+                                            <a href="{{ $encUrl }}" class="pm-name" style="color: rgb(var(--primary-600)); text-decoration: none; cursor: pointer;" title="Klik untuk melihat daftar penerima manfaat lembaga ini" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                                                {{ $row['nama'] }}
+                                            </a>
                                             <span class="pm-badge pm-badge-success">Posyandu</span>
                                         </td>
                                         <td>{{ $row['rincian']['balita'] ?: '-' }}</td>

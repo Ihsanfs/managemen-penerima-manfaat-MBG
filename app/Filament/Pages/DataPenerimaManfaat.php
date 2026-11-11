@@ -143,9 +143,8 @@ class DataPenerimaManfaat extends Page
         $service = app(DailyReportService::class);
         $data = $service->dataForDate($date);
 
-        $aktif = Beneficiary::query()->where('status', 'aktif');
-        $laki = $aktif->where('jenis_kelamin', 'L')->count();
-        $perempuan = $aktif->where('jenis_kelamin', 'P')->count();
+        $laki = Beneficiary::query()->where('status', 'aktif')->where('jenis_kelamin', 'L')->count();
+        $perempuan = Beneficiary::query()->where('status', 'aktif')->where('jenis_kelamin', 'P')->count();
 
         return [
             'profile' => SppgProfile::current(),

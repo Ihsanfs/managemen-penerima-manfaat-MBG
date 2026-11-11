@@ -31,6 +31,16 @@ class InstitutionResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'info';
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -76,7 +86,11 @@ class InstitutionResource extends Resource
                             ]),
                         Forms\Components\Select::make('category_id')
                             ->label('Kategori Lembaga')
-                            ->relationship('category', 'nama')
+                            ->relationship(
+                                name: 'category',
+                                titleAttribute: 'nama',
+                                modifyQueryUsing: fn (Builder $query) => $query->where('jenis', Category::JENIS_LEMBAGA)
+                            )
                             ->searchable()
                             ->preload()
                             ->visible(fn (Get $get): bool => $get('tipe') === 'lembaga' || true)
@@ -113,26 +127,48 @@ class InstitutionResource extends Resource
                             ->label('Alamat')
                             ->rows(2)
                             ->columnSpanFull(),
-                        Forms\Components\TextInput::make('urutan')
+                        Forms\Components\Select::make('urutan')
                             ->label('Urutan Tampil')
-                            ->numeric()
-                            ->default(0)
-                            ->minValue(0)
+                            ->options(function (?Institution $record) {
+                                $used = Institution::query()
+                                    ->when($record, fn ($q) => $q->where('id', '!=', $record->id))
+                                    ->pluck('nama', 'urutan')
+                                    ->all();
+
+                                $max = max(30, (int) Institution::max('urutan') + 5);
+                                $options = [];
+                                for ($i = 1; $i <= $max; $i++) {
+                                    if (isset($used[$i])) {
+                                        $options[$i] = "Urutan {$i} — Terpakai ({$used[$i]})";
+                                    } else {
+                                        $options[$i] = "Urutan {$i} — Tersedia";
+                                    }
+                                }
+                                return $options;
+                            })
+                            ->default(fn () => (int) (Institution::max('urutan') ?? 0) + 1)
+                            ->required()
+                            ->searchable()
+                            ->native(false)
+                            ->helperText('Pilih nomor urut tampil dari dropdown. Nomor yang sudah terpakai ditandai dengan nama lembaga.')
                             ->rules([
-                                function () {
-                                    return function ($attribute, $value, $fail) {
+                                function ($get, ?Institution $record) {
+                                    return function ($attribute, $value, $fail) use ($record) {
                                         if ($value === null || $value === '') {
                                             return;
                                         }
 
                                         $value = (int) $value;
 
-                                        $existing = Institution::query()->where('urutan', $value)->first();
+                                        $query = Institution::query()->where('urutan', $value);
+                                        if ($record) {
+                                            $query->where('id', '!=', $record->id);
+                                        }
+                                        $existing = $query->first();
 
                                         if ($existing) {
                                             $available = self::suggestAvailableUrutan();
-
-                                            $fail("Urutan {$value} sudah digunakan oleh '{$existing->nama}'. Gunakan urutan lain, misalnya: {$available}.");
+                                            $fail("⚠️ PERINGATAN DUPLIKAT: Urutan {$value} sudah digunakan oleh lembaga '{$existing->nama}'. Mohon pilih nomor urut lain yang masih tersedia (Rekomendasi: {$available}).");
                                         }
                                     };
                                 },
@@ -218,13 +254,33 @@ class InstitutionResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('deactivate')
+                    ->label('Nonaktifkan')
+                    ->icon('heroicon-o-eye-slash')
+                    ->color('warning')
+                    ->visible(fn (Institution $record): bool => $record->is_active && (auth()->user()?->isAdmin() ?? false))
+                    ->requiresConfirmation()
+                    ->modalHeading('Nonaktifkan lembaga?')
+                    ->modalDescription('Lembaga yang dinonaktifkan tidak akan muncul sebagai pilihan pada form dan laporan harian.')
+                    ->action(fn (Institution $record) => $record->update(['is_active' => false])),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn (): bool => auth()->user()?->isAdmin() ?? false),
+                    ->label('Hapus')
+                    ->visible(fn (Institution $record): bool => $record->beneficiaries()->count() === 0 && (auth()->user()?->isAdmin() ?? false))
+                    ->requiresConfirmation()
+                    ->modalHeading('Hapus lembaga?')
+                    ->modalDescription('Lembaga yang masih memiliki penerima manfaat tidak dapat dihapus. Nonaktifkan saja jika ingin menyembunyikannya.'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn (): bool => auth()->user()?->isAdmin() ?? false),
+                        ->visible(fn (): bool => auth()->user()?->isAdmin() ?? false)
+                        ->action(function ($records) {
+                            foreach ($records as $record) {
+                                if ($record->beneficiaries()->count() === 0) {
+                                    $record->delete();
+                                }
+                            }
+                        }),
                 ]),
             ])
             ->defaultSort('urutan');

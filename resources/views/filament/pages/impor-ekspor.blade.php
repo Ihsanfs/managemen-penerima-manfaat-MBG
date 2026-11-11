@@ -162,12 +162,12 @@
 
                             <div class="ie-stats">
                                 <div class="ie-stat is-created">
-                                    <div class="ie-stat-label">Dibuat</div>
+                                    <div class="ie-stat-label">Baru (Dibuat)</div>
                                     <div class="ie-stat-value">{{ $hasilPenerima['dibuat'] }}</div>
                                 </div>
                                 <div class="ie-stat is-updated">
-                                    <div class="ie-stat-label">Diperbarui</div>
-                                    <div class="ie-stat-value">{{ $hasilPenerima['diperbarui'] }}</div>
+                                    <div class="ie-stat-label">Duplikat (Dilewati)</div>
+                                    <div class="ie-stat-value">{{ $hasilPenerima['duplikat'] }}</div>
                                 </div>
                                 <div class="ie-stat is-failed">
                                     <div class="ie-stat-label">Gagal</div>
@@ -290,12 +290,12 @@
 
                             <div class="ie-stats">
                                 <div class="ie-stat is-created">
-                                    <div class="ie-stat-label">Dibuat</div>
+                                    <div class="ie-stat-label">Baru (Dibuat)</div>
                                     <div class="ie-stat-value">{{ $hasilLembaga['dibuat'] }}</div>
                                 </div>
                                 <div class="ie-stat is-updated">
-                                    <div class="ie-stat-label">Diperbarui</div>
-                                    <div class="ie-stat-value">{{ $hasilLembaga['diperbarui'] }}</div>
+                                    <div class="ie-stat-label">Duplikat (Dilewati)</div>
+                                    <div class="ie-stat-value">{{ $hasilLembaga['duplikat'] }}</div>
                                 </div>
                                 <div class="ie-stat is-failed">
                                     <div class="ie-stat-label">Gagal</div>

@@ -70,6 +70,8 @@ class DownloadController extends Controller
 
         $kategoriList = implode(', ', array_keys($kategoriPenerima));
 
+        $sampleInstitutionName = Institution::query()->value('nama') ?? 'SDN 1 Samarang';
+
         return $this->spreadsheets->download([
             [
                 'title' => 'Data Penerima',
@@ -86,13 +88,27 @@ class DownloadController extends Controller
                     'tahun',
                     'keterangan',
                 ],
-                'rows' => [],
+                'rows' => [
+                    [
+                        $sampleInstitutionName,
+                        'Contoh Siswa Berhasil Diimpor',
+                        '3200000000000001',
+                        '0012345678',
+                        'L',
+                        'sd',
+                        5,
+                        'aktif',
+                        (int) date('n'),
+                        (int) date('Y'),
+                        'Contoh baris data yang valid untuk diimpor. Hapus atau sesuaikan baris ini sebelum mengimpor file Anda.',
+                    ],
+                ],
                 'text_columns' => [3, 4],
                 'widths' => [3 => 26, 5 => 16, 6 => 14],
                 'freeze' => true,
             ],
             [
-                'title' => 'Petunjuk',
+                'title' => 'Petunjuk & Batas Ketentuan',
                 'headings' => ['kolom', 'wajib', 'keterangan'],
                 'rows' => [
                     ['nama_lembaga', 'Ya', 'Nama lembaga persis seperti pada sheet Referensi Lembaga.'],
@@ -106,9 +122,10 @@ class DownloadController extends Controller
                     ['bulan', 'Tidak', '1-12. Default bulan berjalan.'],
                     ['tahun', 'Tidak', 'Contoh 2026. Default tahun berjalan.'],
                     ['keterangan', 'Tidak', 'Catatan tambahan.'],
-                    ['Cara kerja impor', '', 'Data dicocokkan berurutan: NIK, NISN, lalu lembaga + nama + kategori + kelas. Baris yang belum ada akan dibuat.'],
-                    ['Format file', '', 'Gunakan .xlsx, .xls, atau .csv. Jangan mengubah nama kolom pada sheet Data Penerima.'],
-                    ['Baris kosong', '', 'Baris yang seluruh kolomnya kosong akan dilewati.'],
+                    ['Batas Ukuran File', 'Wajib', 'Maksimal 10 MB per unggahan file (.xlsx, .xls, atau .csv).'],
+                    ['Pemrosesan Chunk', 'Otomatis', 'Data diproses secara bertahap (per 500 baris per batch) untuk mengoptimalkan memori server dan mencegah overload.'],
+                    ['Sistem Anti-Duplikat', 'Otomatis', 'Data yang sudah ada (berdasarkan NIK, NISN, atau kombinasi lembaga + nama + kategori + kelas) akan dilewati dan dihitung sebagai duplikat tanpa menimpa data lama.'],
+                    ['Baris Contoh', 'Perhatian', 'Hapus baris contoh di sheet Data Penerima sebelum melakukan impor data riil agar tidak ikut tersimpan.'],
                 ],
                 'widths' => [1 => 22, 2 => 16, 3 => 80],
                 'wrap' => true,
@@ -255,13 +272,24 @@ class DownloadController extends Controller
                     'urutan',
                     'is_active',
                 ],
-                'rows' => [],
+                'rows' => [
+                    [
+                        'SDN Contoh Baru',
+                        'sekolah',
+                        'sd',
+                        'Jalan Contoh Raya No. 1, Samarang',
+                        'Kepala Sekolah Contoh, S.Pd.',
+                        '081234567890',
+                        100,
+                        'aktif',
+                    ],
+                ],
                 'text_columns' => [6],
                 'widths' => [1 => 28, 4 => 40, 5 => 24, 6 => 18],
                 'freeze' => true,
             ],
             [
-                'title' => 'Petunjuk',
+                'title' => 'Petunjuk & Batas Ketentuan',
                 'headings' => ['kolom', 'wajib', 'keterangan'],
                 'rows' => [
                     ['nama', 'Ya', 'Nama lembaga. Impor mencocokkan nama tanpa membedakan huruf besar/kecil.'],
@@ -272,8 +300,10 @@ class DownloadController extends Controller
                     ['telepon', 'Tidak', 'Nomor telepon / WhatsApp.'],
                     ['urutan', 'Tidak', 'Angka urutan tampilan. Jika kosong, otomatis di urutan berikutnya.'],
                     ['is_active', 'Tidak', 'aktif atau non_aktif. Default aktif.'],
-                    ['Cara kerja impor', '', 'Lembaga dengan nama yang sama akan diperbarui. Nama baru akan dibuat.'],
-                    ['Format file', '', 'Gunakan .xlsx, .xls, atau .csv. Jangan mengubah nama kolom pada sheet Data Lembaga.'],
+                    ['Batas Ukuran File', 'Wajib', 'Maksimal 10 MB per unggahan file (.xlsx, .xls, atau .csv).'],
+                    ['Pemrosesan Chunk', 'Otomatis', 'Data diproses secara bertahap (per 500 baris per batch) untuk mengoptimalkan memori server.'],
+                    ['Sistem Anti-Duplikat', 'Otomatis', 'Lembaga dengan nama yang sudah ada akan dilewati dan dihitung sebagai duplikat tanpa menimpa data lama.'],
+                    ['Baris Contoh', 'Perhatian', 'Hapus baris contoh di sheet Data Lembaga sebelum melakukan impor data riil agar tidak ikut tersimpan.'],
                 ],
                 'widths' => [1 => 22, 2 => 14, 3 => 80],
                 'wrap' => true,
@@ -386,9 +416,8 @@ class DownloadController extends Controller
         $data = app(DailyReportService::class)->dataForDate($date);
         $institusi = collect($data['snapshot']['institusi']);
 
-        $aktif = Beneficiary::query()->where('status', 'aktif');
-        $jmlLaki = $aktif->where('jenis_kelamin', 'L')->count();
-        $jmlPerempuan = $aktif->where('jenis_kelamin', 'P')->count();
+        $jmlLaki = Beneficiary::query()->where('status', 'aktif')->where('jenis_kelamin', 'L')->count();
+        $jmlPerempuan = Beneficiary::query()->where('status', 'aktif')->where('jenis_kelamin', 'P')->count();
 
         $pdf = Pdf::loadView('pdf.data-penerima-manfaat', [
             'profile' => SppgProfile::current(),
@@ -403,6 +432,76 @@ class DownloadController extends Controller
         ])->setPaper('a4', 'landscape');
 
         return $pdf->stream('data-penerima-manfaat-' . $date->format('Y-m-d') . '.pdf');
+    }
+
+    public function cetakDaftarPenerima(): Response
+    {
+        $status = request()->query('status');
+        $kategori = request()->query('kategori');
+        $institution = request()->query('institution_id');
+        $jenisKelamin = request()->query('jenis_kelamin');
+
+        $query = Beneficiary::query()->with('institution');
+
+        if ($status && $status !== 'semua') {
+            $query->where('status', $status);
+        }
+
+        if ($kategori) {
+            $query->where('kategori', $kategori);
+        }
+
+        if ($institution) {
+            $query->where('institution_id', $institution);
+        }
+
+        if ($jenisKelamin) {
+            $query->where('jenis_kelamin', $jenisKelamin);
+        }
+
+        $beneficiaries = $query
+            ->orderBy('institution_id')
+            ->orderBy('nama')
+            ->get();
+
+        $jmlLaki = $beneficiaries->where('jenis_kelamin', 'L')->count();
+        $jmlPerempuan = $beneficiaries->where('jenis_kelamin', 'P')->count();
+
+        // Group by institution name
+        $groups = $beneficiaries->groupBy(fn (Beneficiary $b): string => $b->institution?->nama ?? 'Tanpa Lembaga');
+
+        // Build filter label
+        $filterParts = [];
+
+        if ($status && $status !== 'semua') {
+            $filterParts[] = 'Status: ' . (Beneficiary::STATUS[$status] ?? $status);
+        }
+
+        if ($kategori) {
+            $filterParts[] = 'Kategori: ' . (Category::labelPenerima($kategori) ?? $kategori);
+        }
+
+        if ($institution) {
+            $inst = Institution::query()->find($institution);
+            $filterParts[] = 'Lembaga: ' . ($inst?->nama ?? '#' . $institution);
+        }
+
+        if ($jenisKelamin) {
+            $filterParts[] = 'Jenis Kelamin: ' . (Beneficiary::JENIS_KELAMIN[$jenisKelamin] ?? $jenisKelamin);
+        }
+
+        $pdf = Pdf::loadView('pdf.daftar-penerima-manfaat', [
+            'profile' => SppgProfile::current(),
+            'beneficiaries' => $beneficiaries,
+            'groups' => $groups,
+            'total' => $beneficiaries->count(),
+            'jmlLaki' => $jmlLaki,
+            'jmlPerempuan' => $jmlPerempuan,
+            'filterLabel' => $filterParts !== [] ? implode(' | ', $filterParts) : null,
+            'dicetak' => now()->locale('id')->translatedFormat('d F Y H:i') . ' WIB',
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->stream('daftar-penerima-manfaat-' . now()->format('Ymd-His') . '.pdf');
     }
 
     public function manualBook(): Response

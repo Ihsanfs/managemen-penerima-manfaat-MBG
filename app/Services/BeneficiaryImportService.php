@@ -49,7 +49,7 @@ class BeneficiaryImportService
     public function __construct(private readonly SpreadsheetService $spreadsheets) {}
 
     /**
-     * @return array{dibuat: int, diperbarui: int, gagal: int, total: int, errors: array<int, array{baris: int, pesan: string}>}
+     * @return array{dibuat: int, duplikat: int, gagal: int, total: int, errors: array<int, array{baris: int, pesan: string}>}
      */
     public function import(string $path, ?string $extension = null, ?string $alasan = null): array
     {
@@ -67,93 +67,95 @@ class BeneficiaryImportService
 
         $result = [
             'dibuat' => 0,
-            'diperbarui' => 0,
+            'duplikat' => 0,
             'gagal' => 0,
             'total' => count($parsed['rows']),
             'errors' => [],
         ];
 
-        foreach ($parsed['rows'] as $row) {
-            $line = (int) ($row['__baris'] ?? 0);
+        // Chunk rows (e.g. 500 per chunk) to protect server memory and prevent overload
+        $chunks = array_chunk($parsed['rows'], 500);
 
-            try {
-                $values = $this->mapRow($row, self::HEADER_ALIASES);
+        foreach ($chunks as $chunk) {
+            foreach ($chunk as $row) {
+                $line = (int) ($row['__baris'] ?? 0);
 
-                $institutionName = $this->text($values['nama_lembaga'] ?? null);
+                try {
+                    $values = $this->mapRow($row, self::HEADER_ALIASES);
 
-                if ($institutionName === '') {
-                    throw new InvalidArgumentException('Kolom nama_lembaga wajib diisi.');
+                    $institutionName = $this->text($values['nama_lembaga'] ?? null);
+
+                    if ($institutionName === '') {
+                        throw new InvalidArgumentException('Kolom nama_lembaga wajib diisi.');
+                    }
+
+                    $institution = $institutions->get($this->key($institutionName));
+
+                    if (! $institution) {
+                        throw new InvalidArgumentException("Lembaga '{$institutionName}' tidak ditemukan. Tambahkan lembaga terlebih dahulu atau gunakan nama dari sheet Referensi.");
+                    }
+
+                    $nama = $this->text($values['nama'] ?? null);
+
+                    if ($nama === '') {
+                        throw new InvalidArgumentException('Kolom nama wajib diisi.');
+                    }
+
+                    $kategori = $this->normalizeAlias($values['kategori'] ?? null, self::KATEGORI_ALIASES);
+
+                    if (! $kategori || ! Category::query()->active()->penerima()->where('kode', $kategori)->exists()) {
+                        $tersedia = implode(', ', Category::query()->active()->penerima()->pluck('kode')->all());
+
+                        throw new InvalidArgumentException("Kategori '" . $this->text($values['kategori'] ?? null) . "' tidak dikenal atau tidak aktif. Gunakan: {$tersedia}.");
+                    }
+
+                    $jenisKelamin = $this->normalizeAlias($values['jenis_kelamin'] ?? null, self::JK_ALIASES);
+
+                    if (! $jenisKelamin) {
+                        throw new InvalidArgumentException("Jenis kelamin harus L atau P.");
+                    }
+
+                    $status = $this->normalizeAlias($values['status'] ?? 'aktif', self::STATUS_ALIASES) ?? 'aktif';
+                    $kelas = $this->normalizeKelas($values['kelas'] ?? null, $kategori);
+                    $nik = $this->digits($values['nik'] ?? null, 16, 'NIK');
+                    $nisn = $this->digits($values['nisn'] ?? null, 10, 'NISN');
+                    $bulan = $this->integerInRange($values['bulan'] ?? null, 1, 12, 'Bulan', (int) now()->format('n'));
+                    $tahun = $this->integerInRange($values['tahun'] ?? null, 2000, 2100, 'Tahun', (int) now()->format('Y'));
+                    $keterangan = $this->text($values['keterangan'] ?? null);
+
+                    $existing = $this->findExisting($institution, $nama, $kategori, $kelas, $nik, $nisn);
+
+                    if ($existing) {
+                        // Anti-duplikat: Jika data sudah ada, jangan dimasukkan/diubah, hitung sebagai duplikat/dilewati
+                        $result['duplikat']++;
+                    } else {
+                        $payload = [
+                            'institution_id' => $institution->id,
+                            'nama' => $nama,
+                            'nik' => $nik,
+                            'nisn' => $nisn,
+                            'jenis_kelamin' => $jenisKelamin,
+                            'kategori' => $kategori,
+                            'kelas' => $kelas,
+                            'jurusan' => null,
+                            'status' => $status,
+                            'bulan' => $bulan,
+                            'tahun' => $tahun,
+                            'keterangan' => $keterangan !== '' ? $keterangan : null,
+                        ];
+
+                        $created = new Beneficiary($payload);
+                        $created->tracking_reason = $alasan ?? 'Data penerima manfaat ditambahkan melalui impor.';
+                        $created->save();
+                        $result['dibuat']++;
+                    }
+                } catch (\Throwable $exception) {
+                    $result['gagal']++;
+                    $result['errors'][] = [
+                        'baris' => $line,
+                        'pesan' => $exception->getMessage(),
+                    ];
                 }
-
-                $institution = $institutions->get($this->key($institutionName));
-
-                if (! $institution) {
-                    throw new InvalidArgumentException("Lembaga '{$institutionName}' tidak ditemukan. Tambahkan lembaga terlebih dahulu atau gunakan nama dari sheet Referensi.");
-                }
-
-                $nama = $this->text($values['nama'] ?? null);
-
-                if ($nama === '') {
-                    throw new InvalidArgumentException('Kolom nama wajib diisi.');
-                }
-
-                $kategori = $this->normalizeAlias($values['kategori'] ?? null, self::KATEGORI_ALIASES);
-
-                if (! $kategori || ! Category::query()->active()->penerima()->where('kode', $kategori)->exists()) {
-                    $tersedia = implode(', ', Category::query()->active()->penerima()->pluck('kode')->all());
-
-                    throw new InvalidArgumentException("Kategori '" . $this->text($values['kategori'] ?? null) . "' tidak dikenal atau tidak aktif. Gunakan: {$tersedia}.");
-                }
-
-                $jenisKelamin = $this->normalizeAlias($values['jenis_kelamin'] ?? null, self::JK_ALIASES);
-
-                if (! $jenisKelamin) {
-                    throw new InvalidArgumentException("Jenis kelamin harus L atau P.");
-                }
-
-                $status = $this->normalizeAlias($values['status'] ?? 'aktif', self::STATUS_ALIASES) ?? 'aktif';
-                $kelas = $this->normalizeKelas($values['kelas'] ?? null, $kategori);
-                $nik = $this->digits($values['nik'] ?? null, 16, 'NIK');
-                $nisn = $this->digits($values['nisn'] ?? null, 10, 'NISN');
-                $bulan = $this->integerInRange($values['bulan'] ?? null, 1, 12, 'Bulan', (int) now()->format('n'));
-                $tahun = $this->integerInRange($values['tahun'] ?? null, 2000, 2100, 'Tahun', (int) now()->format('Y'));
-                $keterangan = $this->text($values['keterangan'] ?? null);
-
-                $payload = [
-                    'institution_id' => $institution->id,
-                    'nama' => $nama,
-                    'nik' => $nik,
-                    'nisn' => $nisn,
-                    'jenis_kelamin' => $jenisKelamin,
-                    'kategori' => $kategori,
-                    'kelas' => $kelas,
-                    'jurusan' => $kategori === 'smk' ? ($existing ?? null)?->jurusan : null,
-                    'status' => $status,
-                    'bulan' => $bulan,
-                    'tahun' => $tahun,
-                    'keterangan' => $keterangan !== '' ? $keterangan : null,
-                ];
-
-                $existing = $this->findExisting($institution, $nama, $kategori, $kelas, $nik, $nisn);
-
-                $payload['jurusan'] = $existing?->jurusan;
-
-                if ($existing) {
-                    $existing->tracking_reason = $alasan ?? 'Data penerima manfaat diperbarui melalui impor.';
-                    $existing->fill($payload)->save();
-                    $result['diperbarui']++;
-                } else {
-                    $created = new Beneficiary($payload);
-                    $created->tracking_reason = $alasan ?? 'Data penerima manfaat ditambahkan melalui impor.';
-                    $created->save();
-                    $result['dibuat']++;
-                }
-            } catch (\Throwable $exception) {
-                $result['gagal']++;
-                $result['errors'][] = [
-                    'baris' => $line,
-                    'pesan' => $exception->getMessage(),
-                ];
             }
         }
 
