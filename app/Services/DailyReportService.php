@@ -158,16 +158,16 @@ class DailyReportService
 
         return DB::transaction(function () use ($date, $sumber, $user, $catatan) {
             $snapshot = $this->buildSnapshot($date);
+            $dateString = $date->toDateString();
 
             $existing = DailyReport::query()
-                ->whereDate('tanggal', $date->toDateString())
+                ->whereDate('tanggal', $dateString)
                 ->first();
 
             $totalSebelum = $existing?->total ?? 0;
 
-            $report = DailyReport::query()->updateOrCreate(
-                ['tanggal' => $date->toDateString()],
-                [
+            if ($existing) {
+                $existing->update([
                     ...$snapshot['totals'],
                     'total' => $snapshot['total'],
                     'sumber' => $sumber,
@@ -175,8 +175,20 @@ class DailyReportService
                     'saved_at' => now(),
                     'catatan' => $catatan,
                     'kategori_json' => $snapshot['kategori_json'],
-                ],
-            );
+                ]);
+                $report = $existing;
+            } else {
+                $report = DailyReport::query()->create([
+                    'tanggal' => $dateString,
+                    ...$snapshot['totals'],
+                    'total' => $snapshot['total'],
+                    'sumber' => $sumber,
+                    'saved_by' => $user?->id,
+                    'saved_at' => now(),
+                    'catatan' => $catatan,
+                    'kategori_json' => $snapshot['kategori_json'],
+                ]);
+            }
 
             $report->details()->delete();
 
