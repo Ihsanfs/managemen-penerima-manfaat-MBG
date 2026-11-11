@@ -34,6 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('SPPG Samarang')
+            ->favicon(asset('favicon.ico'))
             ->colors([
                 'primary' => Color::Emerald,
             ])
@@ -70,6 +71,10 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
+                fn (): string => view('filament.partials.eye-mode-toggle')->render(),
+            )
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): string => view('filament.partials.error-modal')->render(),
