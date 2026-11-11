@@ -110,10 +110,10 @@ class BeneficiaryResource extends Resource
                                 in_array($get('kategori'), ['sma', 'smk'], true) => [10 => 'Kelas X', 11 => 'Kelas XI', 12 => 'Kelas XII'],
                                 $get('kategori') === 'smp' => [7 => 'Kelas 7', 8 => 'Kelas 8', 9 => 'Kelas 9'],
                                 $get('kategori') === 'sd' => [1 => 'Kelas 1', 2 => 'Kelas 2', 3 => 'Kelas 3', 4 => 'Kelas 4', 5 => 'Kelas 5', 6 => 'Kelas 6'],
-                                default => [],
+                                default => [1 => 'Kelas 1', 2 => 'Kelas 2', 3 => 'Kelas 3', 4 => 'Kelas 4', 5 => 'Kelas 5', 6 => 'Kelas 6'],
                             })
-                            ->visible(fn (Get $get): bool => in_array($get('kategori'), ['sd', 'smp', 'sma', 'smk'], true))
-                            ->required(fn (Get $get): bool => in_array($get('kategori'), ['sd', 'smp', 'sma', 'smk'], true)),
+                            ->visible(fn (Get $get): bool => (bool) Category::query()->where('jenis', Category::JENIS_PENERIMA)->where('kode', $get('kategori'))->value('has_class'))
+                            ->required(fn (Get $get): bool => (bool) Category::query()->where('jenis', Category::JENIS_PENERIMA)->where('kode', $get('kategori'))->value('has_class')),
                         Forms\Components\TextInput::make('jurusan')
                             ->label('Jurusan')
                             ->maxLength(255)

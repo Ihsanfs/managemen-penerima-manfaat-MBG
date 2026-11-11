@@ -22,6 +22,7 @@ class Category extends Model
         'nama',
         'jenis',
         'grup',
+        'has_class',
         'urutan',
         'is_active',
         'keterangan',
@@ -32,6 +33,7 @@ class Category extends Model
         return [
             'urutan' => 'integer',
             'is_active' => 'boolean',
+            'has_class' => 'boolean',
         ];
     }
 

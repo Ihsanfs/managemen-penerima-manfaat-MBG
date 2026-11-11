@@ -67,6 +67,11 @@ class CategoryResource extends Resource
                             ->nullable()
                             ->visible(fn (Get $get): bool => $get('jenis') === Category::JENIS_PENERIMA)
                             ->helperText('Hanya untuk kategori penerima manfaat yang ingin dikomitasi pada laporan harian.'),
+                        Forms\Components\Toggle::make('has_class')
+                            ->label('Aktifkan Kelas')
+                            ->default(false)
+                            ->visible(fn (Get $get): bool => $get('jenis') === Category::JENIS_PENERIMA)
+                            ->helperText('Aktifkan jika kategori ini menggunakan pembagian kelas (seperti SD, SMP, SMA, SMK).'),
                         Forms\Components\Select::make('urutan')
                             ->label('Urutan Tampil')
                             ->options(function (?Category $record) {
