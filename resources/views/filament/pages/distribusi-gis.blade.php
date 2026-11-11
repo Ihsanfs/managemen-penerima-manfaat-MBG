@@ -180,30 +180,43 @@
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(map);
 
-                // Kabupaten boundary (wider scope)
+                // Provinsi boundary (macro scope)
+                const provBoundary = @json($provinsiBoundary);
+                if (provBoundary && provBoundary.length > 0) {
+                    L.polygon(provBoundary, {
+                        color: '#8b5cf6',
+                        weight: 2,
+                        opacity: 0.7,
+                        fillColor: '#c084fc',
+                        fillOpacity: 0.04,
+                        dashArray: '10, 6'
+                    }).addTo(map).bindPopup('<b>Batas Wilayah Provinsi ({{ $profile->provinsi ?? "Jawa Barat" }})</b><br>cahyadsn/wilayah_boundaries');
+                }
+
+                // Kabupaten boundary (meso scope)
                 const kabBoundary = @json($kabupatenBoundary);
                 if (kabBoundary && kabBoundary.length > 0) {
                     L.polygon(kabBoundary, {
-                        color: '#2563eb',
-                        weight: 2,
-                        opacity: 0.6,
-                        fillColor: '#3b82f6',
-                        fillOpacity: 0.03,
-                        dashArray: '8, 8'
-                    }).addTo(map).bindPopup('<b>Batas Wilayah Kabupaten / Regional</b><br>cahyadsn/wilayah_boundaries');
+                        color: '#0284c7',
+                        weight: 3,
+                        opacity: 0.85,
+                        fillColor: '#38bdf8',
+                        fillOpacity: 0.1,
+                        dashArray: '6, 4'
+                    }).addTo(map).bindPopup('<b>Batas Wilayah Kabupaten (Kabupaten {{ $profile->kabupaten ?? "Garut" }})</b><br>cahyadsn/wilayah_boundaries');
                 }
 
-                // Kecamatan boundary (focused district scope)
+                // Kecamatan boundary (micro scope - highlighted)
                 const kecBoundary = @json($kecamatanBoundary);
                 if (kecBoundary && kecBoundary.length > 0) {
                     L.polygon(kecBoundary, {
                         color: '#059669',
-                        weight: 3,
-                        opacity: 0.9,
+                        weight: 4,
+                        opacity: 0.95,
                         fillColor: '#10b981',
-                        fillOpacity: 0.12,
-                        dashArray: '4, 4'
-                    }).addTo(map).bindPopup('<b>Batas Wilayah Administrasi Kecamatan ({{ $profile->kecamatan ?? "Samarang" }})</b><br>Kabupaten {{ $profile->kabupaten ?? "Garut" }}');
+                        fillOpacity: 0.22,
+                        dashArray: null
+                    }).addTo(map).bindPopup('<b>Batas Wilayah Administrasi Kecamatan (Kecamatan {{ $profile->kecamatan ?? "Samarang" }})</b><br>Kabupaten {{ $profile->kabupaten ?? "Garut" }}');
                 }
 
                 // SPPG Central Marker with pulse ring

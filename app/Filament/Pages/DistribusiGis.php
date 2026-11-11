@@ -60,7 +60,7 @@ class DistribusiGis extends Page
         $maxDistance = $institutions->max('distance') ?? 0;
         $avgDistance = $institutions->whereNotNull('distance')->avg('distance') ?? 0;
 
-        $boundaries = $this->getBoundaries($profile->kecamatan ?? 'Samarang', $profile->kabupaten ?? 'Garut');
+        $boundaries = $this->getBoundaries($profile->kecamatan ?? 'Samarang', $profile->kabupaten ?? 'Garut', $profile->provinsi ?? 'Jawa Barat');
 
         return [
             'profile' => $profile,
@@ -71,13 +71,15 @@ class DistribusiGis extends Page
             'totalBeneficiaries' => $institutions->sum('beneficiaries_count'),
             'kecamatanBoundary' => $boundaries['kecamatan'],
             'kabupatenBoundary' => $boundaries['kabupaten'],
+            'provinsiBoundary' => $boundaries['provinsi'],
         ];
     }
 
-    protected function getBoundaries(string $kecamatanName = 'Samarang', string $kabupatenName = 'Garut'): array
+    protected function getBoundaries(string $kecamatanName = 'Samarang', string $kabupatenName = 'Garut', string $provinsiName = 'Jawa Barat'): array
     {
         $kecamatanBoundary = [];
         $kabupatenBoundary = [];
+        $provinsiBoundary = [];
 
         $kecFiles = glob(storage_path('wilayah/db/kec/wilayah_boundaries_kec_*.sql'));
         foreach ($kecFiles as $file) {
@@ -109,9 +111,25 @@ class DistribusiGis extends Page
             fclose($handle);
         }
 
+        $provFiles = glob(storage_path('wilayah/db/prov/wilayah_boundaries_prov_*.sql'));
+        foreach ($provFiles as $file) {
+            $handle = @fopen($file, 'r');
+            if (!$handle) continue;
+            while (($line = fgets($handle)) !== false) {
+                if (stripos($line, $provinsiName) !== false) {
+                    if (preg_match("/'(\[\[\[.*?\]\]\])'/s", $line, $m)) {
+                        $provinsiBoundary = json_decode($m[1], true);
+                        break 2;
+                    }
+                }
+            }
+            fclose($handle);
+        }
+
         return [
             'kecamatan' => $kecamatanBoundary,
             'kabupaten' => $kabupatenBoundary,
+            'provinsi' => $provinsiBoundary,
         ];
     }
 
