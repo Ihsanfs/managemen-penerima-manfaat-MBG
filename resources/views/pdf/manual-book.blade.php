@@ -506,6 +506,18 @@
             <td>Snapshot otomatis</td>
             <td>Membuat carry-forward pada hari kerja pukul 01.00 WIB jika data hari tersebut belum ada.</td>
         </tr>
+        <tr>
+            <td>Peta &amp; Distribusi GIS</td>
+            <td>Visualisasi peta Leaflet, Haversine distance routing, animasi mobil pengantaran (🚚), dan batas wilayah hierarkis (Provinsi, Kabupaten, Kecamatan).</td>
+        </tr>
+        <tr>
+            <td>Navbar Eye Mode &amp; Logo</td>
+            <td>Pengaturan mode tampilan (Mode Terang, Mode Gelap, Eye Care/Sepia), unggah Logo SPPG, dan kustomisasi Favicon.</td>
+        </tr>
+        <tr>
+            <td>Mode Agregat &amp; Kelas</td>
+            <td>Input cepat berdasarkan jumlah/kuantitas total per kelas, pengaturan kategori dengan opsi "Aktifkan Kelas".</td>
+        </tr>
     </table>
 
     <h2>Peran pengguna</h2>
