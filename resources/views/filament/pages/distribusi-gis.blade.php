@@ -308,7 +308,6 @@
                 document.getElementById('start-sim').addEventListener('click', startSimulation);
                 document.getElementById('stop-sim').addEventListener('click', function() {
                     stopSimulation();
-                    location.reload();
                 });
 
                 // Auto start simulation after 1.5 seconds
