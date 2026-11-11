@@ -180,6 +180,19 @@
                     attribution: '&copy; OpenStreetMap contributors'
                 }).addTo(map);
 
+                // Regional boundary from wilayah_boundaries (Kecamatan Samarang)
+                const samarangBoundary = @json($samarangBoundary);
+                if (samarangBoundary && samarangBoundary.length > 0) {
+                    L.polygon(samarangBoundary, {
+                        color: '#059669',
+                        weight: 2.5,
+                        opacity: 0.85,
+                        fillColor: '#10b981',
+                        fillOpacity: 0.1,
+                        dashArray: '5, 5'
+                    }).addTo(map).bindPopup('<b>Batas Wilayah Administrasi Kecamatan Samarang</b><br>Kabupaten Garut, Jawa Barat (cahyadsn/wilayah_boundaries)');
+                }
+
                 // SPPG Central Marker with pulse ring
                 const sppgIcon = L.divIcon({
                     className: 'custom-sppg-marker',

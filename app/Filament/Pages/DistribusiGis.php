@@ -60,6 +60,9 @@ class DistribusiGis extends Page
         $maxDistance = $institutions->max('distance') ?? 0;
         $avgDistance = $institutions->whereNotNull('distance')->avg('distance') ?? 0;
 
+        $boundaryFile = storage_path('app/samarang_boundary.json');
+        $samarangBoundary = file_exists($boundaryFile) ? json_decode(file_get_contents($boundaryFile), true) : [];
+
         return [
             'profile' => $profile,
             'institutions' => $institutions,
@@ -67,6 +70,7 @@ class DistribusiGis extends Page
             'avgDistance' => round($avgDistance, 2),
             'totalInstitutions' => $institutions->count(),
             'totalBeneficiaries' => $institutions->sum('beneficiaries_count'),
+            'samarangBoundary' => $samarangBoundary,
         ];
     }
 
