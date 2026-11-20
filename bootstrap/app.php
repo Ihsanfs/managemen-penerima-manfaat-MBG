@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Percayai proxy (ngrok, load balancer, reverse proxy) agar skema
+        // https terdeteksi dan aset tidak diblokir sebagai mixed content.
+        $middleware->trustProxies(at: '*');
+
         $middleware->append(SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

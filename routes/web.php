@@ -1,11 +1,11 @@
 <?php
 
 use App\Http\Controllers\DownloadController;
+use App\Http\Controllers\PublicDataController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Halaman publik: data penerima manfaat hari ini bisa dilihat tanpa login.
+Route::get('/', PublicDataController::class)->name('beranda');
 
 Route::middleware(['auth', 'throttle:30,1'])->prefix('unduhan')->name('unduhan.')->group(function () {
     Route::get('template-penerima', [DownloadController::class, 'templatePenerima'])->name('template-penerima');

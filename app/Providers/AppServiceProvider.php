@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Beneficiary;
 use App\Observers\BeneficiaryObserver;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -22,5 +23,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Beneficiary::observe(BeneficiaryObserver::class);
+
+        // Saat aplikasi diakses lewat proxy https (mis. ngrok), paksa semua URL
+        // aset/rute memakai https supaya tidak diblokir browser (mixed content).
+        $forwardedProto = request()->header('X-Forwarded-Proto');
+
+        if ($forwardedProto && str_contains(strtolower($forwardedProto), 'https')) {
+            URL::forceScheme('https');
+        }
     }
 }

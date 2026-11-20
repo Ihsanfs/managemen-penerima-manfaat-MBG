@@ -34,7 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('SPPG Samarang')
-            ->favicon(asset('favicon.ico'))
+            ->favicon('/favicon.ico')
             ->colors([
                 'primary' => Color::Emerald,
             ])

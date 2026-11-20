@@ -37,6 +37,11 @@ class SppgProfileResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->columnSpanFull(),
+                        Forms\Components\FileUpload::make('logo')
+                            ->label('Logo / Gambar SPPG')
+                            ->image()
+                            ->directory('sppg-logos')
+                            ->columnSpanFull(),
                         Forms\Components\TextInput::make('kepala_sppg')
                             ->label('Kepala / Penanggung Jawab')
                             ->maxLength(255),
